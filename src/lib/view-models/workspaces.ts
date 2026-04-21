@@ -228,7 +228,7 @@ export async function getWorkspaceDetailVm(
         summary: runState.lastEventType,
       })),
       openChanges: workspaceRecord.changeDocuments.map((change) => ({
-        id: `${change.changeKey}:${change.docType}`,
+        id: `${change.changeKey}__${change.docType}`,
         title: change.title || `${change.changeKey} / ${change.docType}`,
         status: getStatusBadge(
           (change.status === "completed"

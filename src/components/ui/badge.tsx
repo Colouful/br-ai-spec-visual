@@ -4,17 +4,21 @@ import type { HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full px-3 py-1 text-xs font-medium",
+  "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset",
   {
     defaultVariants: {
       variant: "muted",
     },
     variants: {
       variant: {
-        accent: "bg-teal-500/12 text-teal-700 ring-1 ring-teal-500/20",
-        muted:
-          "bg-slate-900/[0.06] text-slate-600 ring-1 ring-slate-900/[0.08]",
-        warm: "bg-amber-500/12 text-amber-700 ring-1 ring-amber-500/20",
+        accent: "bg-cyan-400/10 text-cyan-200 ring-cyan-400/25",
+        muted: "bg-white/[0.06] text-slate-300 ring-white/10",
+        warm: "bg-amber-400/10 text-amber-200 ring-amber-400/25",
+        success: "bg-lime-400/10 text-lime-200 ring-lime-400/25",
+        danger: "bg-rose-400/10 text-rose-200 ring-rose-400/25",
+        outline: "bg-transparent text-slate-300 ring-white/15",
+        aurora:
+          "text-white bg-[linear-gradient(135deg,rgba(34,211,238,0.35),rgba(168,85,247,0.35))] ring-white/20",
       },
     },
   },
@@ -26,3 +30,5 @@ type BadgeProps = HTMLAttributes<HTMLDivElement> &
 export function Badge({ className, variant, ...props }: BadgeProps) {
   return <div className={cn(badgeVariants({ variant }), className)} {...props} />;
 }
+
+export { badgeVariants };

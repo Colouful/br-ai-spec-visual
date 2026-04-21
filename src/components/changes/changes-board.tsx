@@ -5,6 +5,31 @@ import { Panel } from "@/components/dashboard/panel";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import type { ChangesPageVm } from "@/lib/view-models/changes";
 
+const SYSTEM_LABELS: Record<string, string> = {
+  tasks: "任务开发清单",
+  checklist: "交付检查单",
+  design: "设计方案",
+  iterations: "迭代记录",
+  proposal: "变更提案",
+  spec: "规格说明",
+  "prd-to-delivery": "PRD 到交付",
+  "prd-to-release": "PRD 到上线",
+  规划: "规划",
+  评审: "评审",
+  发布: "发布",
+  拓扑: "拓扑",
+  总览: "总览",
+  审计: "审计",
+  保护: "保护",
+  保留策略: "保留策略",
+  调度: "调度",
+  时间线: "时间线",
+};
+
+function translateSystem(value: string): string {
+  return SYSTEM_LABELS[value] ?? SYSTEM_LABELS[value.toLowerCase()] ?? value;
+}
+
 export function ChangesBoard({ viewModel }: { viewModel: ChangesPageVm }) {
   return (
     <div className="space-y-6">
@@ -40,9 +65,9 @@ export function ChangesBoard({ viewModel }: { viewModel: ChangesPageVm }) {
                     {card.systems.map((system) => (
                       <span
                         key={system}
-                        className="rounded-full border border-white/8 bg-black/20 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.24em] text-slate-300"
+                        className="rounded-full border border-white/8 bg-black/20 px-2.5 py-1 text-[11px] tracking-wide text-slate-300"
                       >
-                        {system}
+                        {translateSystem(system)}
                       </span>
                     ))}
                   </div>

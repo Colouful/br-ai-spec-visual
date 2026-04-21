@@ -2,6 +2,11 @@ import { nanoid } from 'nanoid';
 
 import { createConnectToken } from './connect-token.ts';
 import { parseControlCommand } from './control.ts';
+import {
+  commandFromControlCommand,
+  enqueueControlOutbox,
+  listPendingOutbox,
+} from './control-outbox.ts';
 import { HttpError, jsonResponse, parseJsonBody } from './http.ts';
 import { recordControlCommand } from './repository.ts';
 import { getConnectTokenSecret, getRuntime } from './runtime.ts';
@@ -279,7 +284,10 @@ export async function listTasksAction(request?: Request): Promise<Response> {
 
 export async function getChangeAction(changeId: string): Promise<Response> {
   await requireApiUser();
-  const change = (await listChangeReadModels()).find((item) => item.id === changeId);
+  const normalizedId = changeId.replace(/:/g, '__');
+  const change = (await listChangeReadModels()).find(
+    (item) => item.id === changeId || item.id === normalizedId,
+  );
 
   if (!change) {
     throw new HttpError(404, 'Change not found');
@@ -313,10 +321,44 @@ async function createControlAction(
   const controlRecord = recordControlCommand(runtime.repository, command);
   const delivery = publishControlCommand(controlRecord);
 
+  // 写入 outbox 等待 auto 侧 cli 边界 pull 后应用
+  const outboxCommand = commandFromControlCommand(command);
+  const outboxRow = await enqueueControlOutbox({
+    workspaceId: command.workspace_id,
+    runKey: command.run_id,
+    command: outboxCommand,
+    payload: {
+      gate:
+        command.command === 'approve'
+          ? typeof body.gate === 'string'
+            ? body.gate
+            : 'before-implementation'
+          : undefined,
+      reason:
+        command.command === 'approve'
+          ? command.comment
+          : 'reason' in command
+          ? command.reason
+          : undefined,
+      run_id: command.run_id,
+      checkpoint_id:
+        command.command === 'resume' ? command.checkpoint_id : undefined,
+      requested_by: controlRecord.actor_id,
+      decision: command.command === 'approve' ? command.decision : undefined,
+    },
+    actorId: controlRecord.actor_id,
+  });
+
   return jsonResponse({
     ok: true,
     command: controlRecord,
     delivery,
+    outbox: {
+      id: outboxRow.id,
+      status: outboxRow.status,
+      command: outboxRow.command,
+      created_at: outboxRow.createdAt.toISOString(),
+    },
   });
 }
 
@@ -326,4 +368,23 @@ export async function approveAction(request: Request): Promise<Response> {
 
 export async function resumeAction(request: Request): Promise<Response> {
   return createControlAction(request, 'resume');
+}
+
+export async function pendingControlsAction(request: Request): Promise<Response> {
+  const url = new URL(request.url);
+  const workspaceId = url.searchParams.get('workspace_id');
+  if (!workspaceId) {
+    throw new HttpError(400, 'workspace_id is required');
+  }
+  const since = url.searchParams.get('since');
+  const limitParam = url.searchParams.get('limit');
+  const limit = limitParam ? Number(limitParam) : undefined;
+
+  const items = await listPendingOutbox({
+    workspaceId,
+    since,
+    limit: Number.isFinite(limit ?? NaN) ? (limit as number) : undefined,
+  });
+
+  return jsonResponse({ items });
 }

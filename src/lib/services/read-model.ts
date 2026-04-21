@@ -270,7 +270,7 @@ export async function listChangeReadModels() {
   return items.map((item) => {
     const payload = asRecord(item.payload);
     return {
-      id: `${item.changeKey}:${item.docType}`,
+      id: `${item.changeKey}__${item.docType}`,
       changeKey: item.changeKey,
       docType: item.docType,
       title: item.title || `${item.changeKey} / ${item.docType}`,

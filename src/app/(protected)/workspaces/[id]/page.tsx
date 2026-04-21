@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ConsolePage } from "@/components/dashboard/console-page";
@@ -20,7 +21,17 @@ export default async function WorkspaceDetailPage({
   return (
     <ConsolePage
       hero={viewModel.hero}
-      actions={<RealtimeWorkspaceBridge label="工作区订阅" workspaceIds={[viewModel.workspace.id]} />}
+      actions={
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href={`/workspaces/${viewModel.workspace.id}/board`}
+            className="rounded-full border border-cyan-300/40 bg-cyan-300/10 px-4 py-2 text-xs font-mono uppercase tracking-[0.26em] text-cyan-200 transition hover:border-cyan-200/70 hover:bg-cyan-300/20"
+          >
+            打开 Kanban
+          </Link>
+          <RealtimeWorkspaceBridge label="工作区订阅" workspaceIds={[viewModel.workspace.id]} />
+        </div>
+      }
     >
       <WorkspaceDetail viewModel={viewModel} />
     </ConsolePage>

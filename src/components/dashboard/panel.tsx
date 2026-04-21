@@ -17,7 +17,7 @@ export function Panel({
   return (
     <section
       className={clsx(
-        "rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(10,17,28,0.95),rgba(6,11,19,0.92))] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.36)] backdrop-blur",
+        "glass-panel relative overflow-hidden rounded-[24px] p-5 sm:p-6",
         className,
       )}
     >
@@ -30,7 +30,9 @@ export function Panel({
               </p>
             ) : null}
             {title ? (
-              <h2 className="text-lg font-semibold tracking-tight text-white">{title}</h2>
+              <h2 className="text-lg font-semibold tracking-tight text-white">
+                {title}
+              </h2>
             ) : null}
           </div>
           {aside}

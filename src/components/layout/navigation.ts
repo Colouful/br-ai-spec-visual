@@ -7,7 +7,10 @@ export type NavigationIcon =
   | "list-todo"
   | "activity"
   | "users"
-  | "settings";
+  | "settings"
+  | "folders"
+  | "git-branch"
+  | "network";
 
 export interface NavigationItem {
   href: string;
@@ -29,11 +32,18 @@ const NAVIGATION_SECTIONS: NavigationSection[] = [
     label: "工作台",
     items: [
       {
-        href: "/",
+        href: "/overview",
         icon: "layout-dashboard",
         label: "总览",
         requiredRole: "viewer",
-        summary: "查看系统概况与关键指标",
+        summary: "全工作区健康卡 + 活跃运行心跳 + 归档时间线",
+      },
+      {
+        href: "/workspaces",
+        icon: "folders",
+        label: "工作区",
+        requiredRole: "viewer",
+        summary: "多项目纳管与连接配置",
       },
       {
         href: "/specs",
@@ -55,6 +65,20 @@ const NAVIGATION_SECTIONS: NavigationSection[] = [
         label: "运行记录",
         requiredRole: "maintainer",
         summary: "审阅自动化执行与异常历史",
+      },
+      {
+        href: "/changes",
+        icon: "git-branch",
+        label: "变更流水",
+        requiredRole: "maintainer",
+        summary: "跟踪变更文档与状态流转",
+      },
+      {
+        href: "/topology",
+        icon: "network",
+        label: "拓扑图谱",
+        requiredRole: "viewer",
+        summary: "仓库与规范资产关系可视化",
       },
     ],
   },
@@ -85,4 +109,8 @@ export function getNavigationSections(role: UserRole) {
     ...section,
     items: section.items.filter((item) => hasPermission(role, item.requiredRole)),
   })).filter((section) => section.items.length > 0);
+}
+
+export function getAllNavigationItems(role: UserRole): NavigationItem[] {
+  return getNavigationSections(role).flatMap((s) => s.items);
 }

@@ -11,7 +11,16 @@ export default async function ChangeDetailPage({
   params: Promise<{ changeId: string }>;
 }) {
   const { changeId } = await params;
-  const viewModel = await getChangeDetailVm(changeId);
+  const decodedChangeId = (() => {
+    try {
+      return decodeURIComponent(changeId);
+    } catch {
+      return changeId;
+    }
+  })();
+  const viewModel =
+    (await getChangeDetailVm(decodedChangeId)) ??
+    (await getChangeDetailVm(changeId));
 
   if (!viewModel) {
     notFound();

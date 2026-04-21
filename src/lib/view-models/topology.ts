@@ -1,3 +1,4 @@
+import { prisma } from "@/lib/db/prisma";
 import { getStatusBadge } from "@/lib/view-models/status";
 import type {
   DemoTopologyLink,
@@ -6,6 +7,16 @@ import type {
   PageHeroVm,
 } from "@/lib/view-models/types";
 import { getDemoConsoleData } from "@/lib/demo/console-data";
+
+export interface ActiveRoleHighlight {
+  roleSlug: string;
+  workspaceId: string;
+  workspaceName: string;
+  runKey: string;
+  pendingGate: string | null;
+  lastEventType: string;
+  lastOccurredAt: string;
+}
 
 export interface TopologyNodeVm {
   id: string;
@@ -32,6 +43,7 @@ export interface TopologyPageVm {
   hero: PageHeroVm;
   graph: RoleTopologyVm;
   signals: MetricVm[];
+  activeRoles: ActiveRoleHighlight[];
 }
 
 export interface FlowTopologyInput {
@@ -138,11 +150,51 @@ export function buildTopologyViewModel(input: FlowTopologyInput): FlowTopologyVm
   };
 }
 
+async function loadActiveRoleHighlights(): Promise<ActiveRoleHighlight[]> {
+  try {
+    const states = await prisma.runState.findMany({
+      where: { status: { notIn: ["completed", "success", "cancelled"] } },
+      orderBy: { lastOccurredAt: "desc" },
+      take: 30,
+      include: { workspace: true },
+    });
+
+    return states
+      .map((state) => {
+        const payload =
+          state.payload && typeof state.payload === "object" && !Array.isArray(state.payload)
+            ? (state.payload as Record<string, unknown>)
+            : {};
+        const role =
+          (typeof payload.current_role === "string" && payload.current_role) ||
+          null;
+        const pendingGate =
+          (typeof payload.pending_gate === "string" && payload.pending_gate) ||
+          null;
+        if (!role) return null;
+        return {
+          roleSlug: role,
+          workspaceId: state.workspaceId,
+          workspaceName: state.workspace?.name || state.workspaceId,
+          runKey: state.runKey,
+          pendingGate,
+          lastEventType: state.lastEventType,
+          lastOccurredAt: state.lastOccurredAt.toISOString(),
+        } satisfies ActiveRoleHighlight;
+      })
+      .filter((entry): entry is ActiveRoleHighlight => Boolean(entry));
+  } catch {
+    return [];
+  }
+}
+
 export async function getTopologyPageVm(): Promise<TopologyPageVm> {
   const data = await getDemoConsoleData();
   const graph = mapRoleTopology(data.topology);
+  const activeRoles = await loadActiveRoleHighlights();
 
   return {
+    activeRoles,
     hero: {
       eyebrow: "角色拓扑",
       title: "跨工作区执行网络",

@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+
+import { AuroraBackground } from "@/components/ui/aurora-background";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,7 +19,11 @@ export default function RootLayout({
 }>) {
   return (
     <html className="h-full antialiased" lang="zh-CN" suppressHydrationWarning>
-      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+      <body
+        className="relative min-h-full text-slate-100 flex flex-col"
+        suppressHydrationWarning
+      >
+        <AuroraBackground />
         {children}
       </body>
     </html>

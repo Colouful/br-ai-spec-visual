@@ -142,7 +142,10 @@ export async function getChangeDetailVm(
   timeZone = "Asia/Shanghai",
 ): Promise<ChangeDetailVm | null> {
   const realChanges = await listChangeReadModels();
-  const current = realChanges.find((change) => change.id === changeId);
+  const normalizedId = changeId.replace(/:/g, "__");
+  const current = realChanges.find(
+    (change) => change.id === changeId || change.id === normalizedId,
+  );
   if (current) {
     return {
       hero: {

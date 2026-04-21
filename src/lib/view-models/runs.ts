@@ -1,3 +1,4 @@
+import { prisma } from "@/lib/db/prisma";
 import { getDemoConsoleData } from "@/lib/demo/console-data";
 import { getRunReadModel, listRunReadModels } from "@/lib/services/read-model";
 import {
@@ -9,6 +10,52 @@ import { normalizeRunStatusKey } from "@/lib/view-models/run-status";
 import { buildRunsBuckets } from "@/lib/view-models/runs-shared";
 import { getStatusBadge } from "@/lib/view-models/status";
 import type { MetricVm, PageHeroVm, StatusKey } from "@/lib/view-models/types";
+
+export type RunEvidenceStageId =
+  | "proposal"
+  | "design"
+  | "tasks"
+  | "delta"
+  | "archive";
+
+export interface RunEvidenceArtifact {
+  id: string;
+  title: string;
+  docType: string;
+  status: string | null;
+  updatedAt: string;
+  sourcePath: string;
+  href?: string;
+}
+
+export interface RunEvidenceStage {
+  id: RunEvidenceStageId;
+  label: string;
+  artifacts: RunEvidenceArtifact[];
+}
+
+export interface RunTraceEvent {
+  id: string;
+  eventType: string;
+  occurredAt: string;
+  occurredAtRelative: string;
+  category: "state" | "control" | "receipt" | "other";
+  summary: string;
+}
+
+export interface RunGateInfo {
+  pendingGate: string | null;
+  currentRole: string | null;
+  awaitingDecision: boolean;
+  outbox: Array<{
+    id: string;
+    command: string;
+    status: string;
+    createdAt: string;
+    appliedAt: string | null;
+    reason: string | null;
+  }>;
+}
 
 export interface RunCardVm {
   id: string;
@@ -48,6 +95,114 @@ export interface RunDetailVm {
       summary: string;
     }>;
     logs: string[];
+    evidenceStages: RunEvidenceStage[];
+    traceEvents: RunTraceEvent[];
+    gate: RunGateInfo;
+  };
+}
+
+function classifyDocStage(docType: string): RunEvidenceStageId {
+  const value = (docType || "").toLowerCase();
+  if (value.includes("proposal")) return "proposal";
+  if (value.includes("design")) return "design";
+  if (value.includes("task")) return "tasks";
+  if (value.includes("delta") || value.includes("spec")) return "delta";
+  return "archive";
+}
+
+const STAGE_LABEL: Record<RunEvidenceStageId, string> = {
+  proposal: "Proposal",
+  design: "Design",
+  tasks: "Tasks",
+  delta: "Spec Delta",
+  archive: "Archive",
+};
+
+function classifyEventCategory(eventType: string): RunTraceEvent["category"] {
+  const value = (eventType || "").toLowerCase();
+  if (value.startsWith("control.")) return "control";
+  if (value.includes("receipt")) return "receipt";
+  if (value.startsWith("run.state") || value.includes("state_changed")) {
+    return "state";
+  }
+  return "other";
+}
+
+async function buildEvidenceStages(
+  workspaceId: string,
+  changeId: string | undefined,
+): Promise<RunEvidenceStage[]> {
+  if (!changeId) {
+    return (Object.keys(STAGE_LABEL) as RunEvidenceStageId[]).map((id) => ({
+      id,
+      label: STAGE_LABEL[id],
+      artifacts: [],
+    }));
+  }
+  const docs = await prisma.changeDocument.findMany({
+    where: { workspaceId, changeKey: changeId },
+    orderBy: { updatedAt: "asc" },
+  });
+
+  const grouped = new Map<RunEvidenceStageId, RunEvidenceArtifact[]>();
+  for (const stage of Object.keys(STAGE_LABEL) as RunEvidenceStageId[]) {
+    grouped.set(stage, []);
+  }
+  for (const doc of docs) {
+    const stage = classifyDocStage(doc.docType);
+    grouped.get(stage)!.push({
+      id: doc.id,
+      title: doc.title || `${doc.changeKey} / ${doc.docType}`,
+      docType: doc.docType,
+      status: doc.status,
+      updatedAt: doc.updatedAt.toISOString(),
+      sourcePath: doc.sourcePath,
+      href: `/changes/${doc.changeKey}__${doc.docType}`,
+    });
+  }
+  return (Object.keys(STAGE_LABEL) as RunEvidenceStageId[]).map((id) => ({
+    id,
+    label: STAGE_LABEL[id],
+    artifacts: grouped.get(id) || [],
+  }));
+}
+
+async function buildGateInfo(
+  workspaceId: string,
+  runKey: string,
+  payload: unknown,
+): Promise<RunGateInfo> {
+  const record =
+    payload && typeof payload === "object" && !Array.isArray(payload)
+      ? (payload as Record<string, unknown>)
+      : {};
+  const pendingGate =
+    typeof record.pending_gate === "string" && record.pending_gate
+      ? record.pending_gate
+      : null;
+  const currentRole =
+    typeof record.current_role === "string" && record.current_role
+      ? record.current_role
+      : null;
+
+  const outboxRows = await prisma.controlOutbox.findMany({
+    where: { workspaceId, runKey },
+    orderBy: { createdAt: "desc" },
+    take: 10,
+  });
+
+  return {
+    pendingGate,
+    currentRole,
+    awaitingDecision: Boolean(pendingGate),
+    outbox: outboxRows.map((row) => ({
+      id: row.id,
+      command: row.command,
+      status: row.status,
+      createdAt: row.createdAt.toISOString(),
+      appliedAt: row.appliedAt?.toISOString() ?? null,
+      reason: row.reason,
+    })),
   };
 }
 
@@ -230,6 +385,24 @@ export async function getRunDetailVm(
     const status = normalizeRunStatusKey(realRun.status);
     const startedAtIso =
       realRun.runEvents[0]?.occurredAt?.toISOString() || realRun.lastOccurredAt.toISOString();
+    const now = new Date();
+
+    const [evidenceStages, gate] = await Promise.all([
+      buildEvidenceStages(realRun.workspaceId, summary.changeId),
+      buildGateInfo(realRun.workspaceId, realRun.runKey, realRun.payload),
+    ]);
+
+    const traceEvents: RunTraceEvent[] = realRun.runEvents.map((event) => ({
+      id: event.id,
+      eventType: event.eventType,
+      occurredAt: event.occurredAt.toISOString(),
+      occurredAtRelative: formatRelativeTime(event.occurredAt, { now, timeZone }),
+      category: classifyEventCategory(event.eventType),
+      summary:
+        typeof event.payload === "object" && event.payload !== null
+          ? JSON.stringify(event.payload).slice(0, 200)
+          : String(event.payload ?? ""),
+    }));
 
     return {
       hero: {
@@ -270,6 +443,9 @@ export async function getRunDetailVm(
         logs: realRun.runEvents.map(
           (event) => `[${event.occurredAt.toISOString()}] ${event.eventType}`,
         ),
+        evidenceStages,
+        traceEvents,
+        gate,
       },
     };
   }
@@ -302,6 +478,26 @@ export async function getRunDetailVm(
         summary: stage.summary,
       })),
       logs: demoRun.logs,
+      evidenceStages: (Object.keys(STAGE_LABEL) as RunEvidenceStageId[]).map(
+        (id) => ({ id, label: STAGE_LABEL[id], artifacts: [] }),
+      ),
+      traceEvents: demoRun.logs.map((line, index) => ({
+        id: `${demoRun.id}:${index}`,
+        eventType: "demo.log",
+        occurredAt: demoRun.updatedAt,
+        occurredAtRelative: formatRelativeTime(demoRun.updatedAt, {
+          now: new Date(),
+          timeZone,
+        }),
+        category: "other" as const,
+        summary: line,
+      })),
+      gate: {
+        pendingGate: null,
+        currentRole: card.operator,
+        awaitingDecision: false,
+        outbox: [],
+      },
     },
   };
 }
