@@ -1,0 +1,272 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum UserRole {
+  admin
+  maintainer
+  viewer
+}
+
+enum AgentStatus {
+  connected
+  idle
+  offline
+}
+
+enum SyncJobStatus {
+  pending
+  running
+  success
+  failed
+}
+
+enum AlertLevel {
+  info
+  warning
+  critical
+}
+
+enum AlertStatus {
+  open
+  resolved
+}
+
+model User {
+  id           String            @id @default(cuid()) @db.VarChar(32)
+  email        String            @unique @db.VarChar(191)
+  name         String            @db.VarChar(191)
+  role         UserRole          @default(viewer)
+  passwordHash String            @db.VarChar(255)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  sessions     Session[]
+  memberships  WorkspaceMember[]
+}
+
+model Session {
+  id        String   @id @default(cuid()) @db.VarChar(32)
+  token     String   @unique @db.VarChar(255)
+  userId    String   @db.VarChar(32)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Workspace {
+  id              String             @id @default(cuid()) @db.VarChar(32)
+  slug            String             @unique @db.VarChar(120)
+  name            String             @db.VarChar(191)
+  description     String?            @db.VarChar(255)
+  rootPath        String?            @db.VarChar(255)
+  status          String             @default("active") @db.VarChar(32)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  members         WorkspaceMember[]
+  agents          WorkspaceAgent[]
+  syncJobs        SyncJob[]
+  registryItems   RegistryItem[]
+  registryLinks   RegistryRelation[]
+  runStates       RunState[]
+  runEvents       RunEvent[]
+  runExecutions   RunRoleExecution[]
+  changeDocuments ChangeDocument[]
+  omxSessions     OmxSession[]
+  omxTurns        OmxTurn[]
+  alerts          Alert[]
+  rawEvents       RawIngestEvent[]
+}
+
+model WorkspaceMember {
+  id          String    @id @default(cuid()) @db.VarChar(32)
+  workspaceId String    @db.VarChar(32)
+  userId      String    @db.VarChar(32)
+  role        UserRole
+  createdAt   DateTime  @default(now())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+}
+
+model WorkspaceAgent {
+  id           String      @id @default(cuid()) @db.VarChar(32)
+  workspaceId  String      @db.VarChar(32)
+  agentId      String      @db.VarChar(120)
+  label        String?     @db.VarChar(120)
+  status       AgentStatus @default(offline)
+  capabilities Json?
+  lastSeenAt   DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  workspace    Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, agentId])
+}
+
+model SyncJob {
+  id          String        @id @default(cuid()) @db.VarChar(32)
+  workspaceId String        @db.VarChar(32)
+  mode        String        @db.VarChar(64)
+  status      SyncJobStatus @default(pending)
+  summary     Json?
+  error       String?       @db.Text
+  startedAt   DateTime      @default(now())
+  finishedAt  DateTime?
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RegistryItem {
+  id          String    @id @default(cuid()) @db.VarChar(32)
+  workspaceId String    @db.VarChar(32)
+  category    String    @db.VarChar(32)
+  slug        String    @db.VarChar(120)
+  name        String    @db.VarChar(191)
+  label       String?   @db.VarChar(191)
+  status      String?   @db.VarChar(32)
+  version     Int       @default(1)
+  sourcePath  String    @db.VarChar(255)
+  payload     Json
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, category, slug])
+}
+
+model RegistryRelation {
+  id             String    @id @default(cuid()) @db.VarChar(32)
+  workspaceId    String    @db.VarChar(32)
+  sourceCategory String    @db.VarChar(32)
+  sourceSlug     String    @db.VarChar(120)
+  relationType   String    @db.VarChar(64)
+  targetSlug     String    @db.VarChar(120)
+  createdAt      DateTime  @default(now())
+  workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, sourceCategory, sourceSlug, relationType, targetSlug])
+}
+
+model RunState {
+  id             String    @id @default(cuid()) @db.VarChar(32)
+  workspaceId    String    @db.VarChar(32)
+  runKey         String    @db.VarChar(120)
+  status         String?   @db.VarChar(32)
+  lastEventType  String    @db.VarChar(120)
+  lastOccurredAt DateTime
+  turnCount      Int       @default(0)
+  payload        Json?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, runKey])
+}
+
+model RunEvent {
+  id          String    @id @default(cuid()) @db.VarChar(32)
+  workspaceId String    @db.VarChar(32)
+  runKey      String    @db.VarChar(120)
+  eventType   String    @db.VarChar(120)
+  occurredAt  DateTime
+  payload     Json
+  createdAt   DateTime  @default(now())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RunRoleExecution {
+  id          String    @id @default(cuid()) @db.VarChar(32)
+  workspaceId String    @db.VarChar(32)
+  runKey      String    @db.VarChar(120)
+  roleSlug    String    @db.VarChar(120)
+  status      String    @db.VarChar(32)
+  startedAt   DateTime?
+  endedAt     DateTime?
+  payload     Json?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model ChangeDocument {
+  id          String    @id @default(cuid()) @db.VarChar(32)
+  workspaceId String    @db.VarChar(32)
+  changeKey   String    @db.VarChar(120)
+  docType     String    @db.VarChar(64)
+  title       String?   @db.VarChar(191)
+  sourcePath  String    @db.VarChar(255)
+  contentHash String?   @db.VarChar(255)
+  status      String?   @db.VarChar(32)
+  archivedAt  DateTime?
+  payload     Json?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, changeKey, docType, sourcePath])
+}
+
+model OmxSession {
+  id              String    @id @default(cuid()) @db.VarChar(32)
+  workspaceId     String    @db.VarChar(32)
+  sessionKey      String    @db.VarChar(120)
+  nativeSessionId String?   @db.VarChar(120)
+  event           String    @db.VarChar(120)
+  pid             Int?
+  timestamp       DateTime
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, sessionKey])
+}
+
+model OmxTurn {
+  id            String    @id @default(cuid()) @db.VarChar(32)
+  workspaceId   String    @db.VarChar(32)
+  sessionKey    String    @db.VarChar(120)
+  turnKey       String    @db.VarChar(120)
+  type          String    @db.VarChar(120)
+  timestamp     DateTime
+  inputPreview  String?   @db.Text
+  outputPreview String?   @db.Text
+  createdAt     DateTime  @default(now())
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, turnKey])
+}
+
+model Alert {
+  id          String      @id @default(cuid()) @db.VarChar(32)
+  workspaceId String      @db.VarChar(32)
+  level       AlertLevel
+  title       String      @db.VarChar(191)
+  message     String      @db.Text
+  status      AlertStatus @default(open)
+  payload     Json?
+  createdAt   DateTime    @default(now())
+  resolvedAt  DateTime?
+  workspace   Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RawIngestEvent {
+  id             String    @id @default(cuid()) @db.VarChar(32)
+  workspaceId    String    @db.VarChar(32)
+  eventId        String    @db.VarChar(120)
+  idempotencyKey String    @unique @db.VarChar(255)
+  sourceType     String    @db.VarChar(32)
+  eventType      String    @db.VarChar(120)
+  occurredAt     DateTime
+  sourcePath     String    @db.VarChar(255)
+  contentHash    String    @db.VarChar(255)
+  payload        Json
+  createdAt      DateTime  @default(now())
+  workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, eventId])
+}
