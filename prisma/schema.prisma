@@ -299,3 +299,59 @@ model ControlOutbox {
   @@index([workspaceId, status, createdAt])
   @@index([runKey, status])
 }
+
+model Installation {
+  id             String                @id @default(cuid())
+  installationId String                @unique
+  hostname       String?
+  username       String?
+  platform       String?
+  arch           String?
+  osRelease      String?
+  nodeVersion    String?
+  firstSeenAt    DateTime              @default(now())
+  lastSeenAt     DateTime              @default(now())
+  lastCommand    String?
+  lastCliVersion String?
+  totalEvents    Int                   @default(0)
+  events         InstallationEvent[]
+  projects       InstallationProject[]
+
+  @@index([lastSeenAt])
+}
+
+model InstallationEvent {
+  id             String       @id @default(cuid())
+  installationId String
+  command        String
+  status         String
+  cliVersion     String?
+  profile        String?
+  ides           Json?
+  level          String?
+  projectHash    String?
+  projectName    String?
+  durationMs     Int?
+  errorMessage   String?      @db.Text
+  occurredAt     DateTime     @default(now())
+  installation   Installation @relation(fields: [installationId], references: [installationId], onDelete: Cascade)
+
+  @@index([installationId, occurredAt])
+  @@index([command, occurredAt])
+  @@index([occurredAt])
+}
+
+model InstallationProject {
+  id             String       @id @default(cuid())
+  installationId String
+  projectHash    String
+  projectName    String?
+  profile        String?
+  firstSeenAt    DateTime     @default(now())
+  lastSeenAt     DateTime     @default(now())
+  eventCount     Int          @default(0)
+  installation   Installation @relation(fields: [installationId], references: [installationId], onDelete: Cascade)
+
+  @@unique([installationId, projectHash])
+  @@index([firstSeenAt])
+}

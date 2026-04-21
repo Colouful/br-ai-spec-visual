@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import {
   Activity,
+  BarChart3,
   FileStack,
   Folders,
   GitBranch,
@@ -21,6 +22,7 @@ import type { NavigationIcon, NavigationItem } from "./navigation";
 
 const ICONS: Record<NavigationIcon, typeof LayoutDashboard> = {
   activity: Activity,
+  "bar-chart": BarChart3,
   "file-stack": FileStack,
   folders: Folders,
   "git-branch": GitBranch,

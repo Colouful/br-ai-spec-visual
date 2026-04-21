@@ -44,27 +44,27 @@ export interface WorkspaceBoardVm {
 
 const LANE_META: Record<BoardLaneId, Pick<BoardLaneVm, "title" | "description" | "accent">> = {
   backlog: {
-    title: "Backlog",
+    title: "待办池(Backlog)",
     description: "未启动的提案候选与待澄清需求",
     accent: "from-slate-400/30 to-slate-700/30",
   },
   proposal: {
-    title: "Proposal",
-    description: "正在拟定 / 待审核的 OpenSpec 提案",
+    title: "提案(Proposal)",
+    description: "正在拟定 / 待审核的 OpenSpec(需求规范) 提案",
     accent: "from-cyan-300/30 to-sky-700/30",
   },
   implementation: {
-    title: "Implementation",
+    title: "执行(Implementation)",
     description: "执行中的任务与运行实例",
     accent: "from-amber-300/30 to-orange-700/30",
   },
   guardian: {
-    title: "Guardian",
+    title: "守门评审(Guardian)",
     description: "等待人工审核 / 守门员介入",
     accent: "from-fuchsia-300/30 to-purple-700/30",
   },
   archive: {
-    title: "Archive",
+    title: "归档(Archive)",
     description: "已归档运行与变更证据",
     accent: "from-emerald-300/30 to-teal-700/30",
   },

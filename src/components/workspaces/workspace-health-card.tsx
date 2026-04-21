@@ -23,7 +23,7 @@ export function WorkspaceHealthCard({
       <div className="flex items-baseline justify-between">
         <div>
           <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-cyan-300/80">
-            Workspace Health
+            工作区健康(Workspace Health)
           </p>
           <h3 className="mt-1 text-lg font-semibold text-white">健康度评分</h3>
         </div>

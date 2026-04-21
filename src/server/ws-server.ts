@@ -22,6 +22,7 @@ import {
   routeRealtimeEvent,
 } from './realtime-hub.ts';
 import { getConnectTokenSecret, getRuntime } from './runtime.ts';
+import { recordInstallationActivity } from './installations-presence.ts';
 
 type DeliveryTarget = 'browser' | 'collector' | 'all';
 
@@ -252,8 +253,18 @@ export function attachWebSocketServer(
   const webSocketServer = new WebSocketServer({ noServer: true });
   runtime.wsServer = webSocketServer;
 
+  const installationWsServer = new WebSocketServer({ noServer: true });
+  attachInstallationWsHandlers(installationWsServer);
+
   server.on('upgrade', (request, socket, head) => {
     const url = new URL(request.url ?? '/', 'http://127.0.0.1');
+
+    if (url.pathname === '/ws/installation') {
+      installationWsServer.handleUpgrade(request, socket, head, (webSocket) => {
+        installationWsServer.emit('connection', webSocket, request);
+      });
+      return;
+    }
 
     if (url.pathname !== '/ws') {
       // 交还给 Next.js 处理（HMR / RSC 等），切勿 destroy，否则客户端无法水合
@@ -314,4 +325,75 @@ export function attachWebSocketServer(
   });
 
   return webSocketServer;
+}
+
+/**
+ * /ws/installation — lightweight heartbeat channel for CLI telemetry presence.
+ * Separate from the main /ws channel; uses its own minimal message schema:
+ *   client → server: { type: 'hello' | 'heartbeat', installationId, hostname?, username?, command?, status? }
+ *   server → client: { type: 'ack' | 'ping' | 'pong' }
+ */
+function attachInstallationWsHandlers(server: WebSocketServer): void {
+  server.on('connection', (socket) => {
+    let installationId: string | null = null;
+    let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+
+    const cleanup = (): void => {
+      if (heartbeatTimer) {
+        clearInterval(heartbeatTimer);
+        heartbeatTimer = null;
+      }
+    };
+
+    heartbeatTimer = setInterval(() => {
+      if (socket.readyState === WebSocket.OPEN) {
+        try {
+          socket.send(JSON.stringify({ type: 'ping', ts: Date.now() }));
+        } catch {
+          // ignore
+        }
+      }
+    }, 30_000);
+
+    socket.on('message', (raw) => {
+      let payload: Record<string, unknown>;
+      try {
+        payload = JSON.parse(raw.toString());
+      } catch {
+        return;
+      }
+
+      const id = typeof payload.installationId === 'string' ? payload.installationId : null;
+      if (!id) {
+        return;
+      }
+      installationId = id;
+
+      recordInstallationActivity({
+        installationId: id,
+        hostname: typeof payload.hostname === 'string' ? payload.hostname : null,
+        username: typeof payload.username === 'string' ? payload.username : null,
+        command: typeof payload.command === 'string' ? payload.command : null,
+        status: typeof payload.status === 'string' ? payload.status : null,
+      });
+
+      const type = typeof payload.type === 'string' ? payload.type : 'heartbeat';
+      if (type === 'hello') {
+        try {
+          socket.send(JSON.stringify({ type: 'ack', ts: Date.now() }));
+        } catch {
+          // ignore
+        }
+      }
+    });
+
+    socket.on('close', () => {
+      cleanup();
+      installationId = null;
+    });
+
+    socket.on('error', () => {
+      cleanup();
+    });
+  });
 }

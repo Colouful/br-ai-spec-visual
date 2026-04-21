@@ -9,6 +9,7 @@ import {
   buildChangeSignals,
   mapChangeStatusKey,
 } from "@/lib/view-models/changes-shared";
+import { zh, zhPlain } from "@/lib/view-models/i18n-terms";
 
 export interface ChangeCardVm {
   id: string;
@@ -38,13 +39,14 @@ export interface ChangeDetailVm {
   hero: PageHeroVm;
   change: ChangeCardVm & {
     reviewers: string[];
-    checklist: string[];
+    checklist: Array<{ label: string; filePath: string | null }>;
     timeline: Array<{
       id: string;
       label: string;
       at: string;
       note: string;
     }>;
+    sourcePath: string | null;
   };
 }
 
@@ -147,14 +149,17 @@ export async function getChangeDetailVm(
     (change) => change.id === changeId || change.id === normalizedId,
   );
   if (current) {
+    const docTypeZh = zh(current.docType, "doc");
+    const statusZh = zh(current.status, "status");
+    const summaryZh = `${zhPlain(current.docType, "doc")} → ${current.sourcePath}`;
     return {
       hero: {
-        eyebrow: current.workspaceName,
+        eyebrow: `${current.workspaceName}（工作区）`,
         title: current.title,
-        subtitle: current.summary,
+        subtitle: summaryZh,
         stats: [
-          { label: "状态", value: current.status },
-          { label: "文档类型", value: current.docType },
+          { label: "状态", value: statusZh },
+          { label: "文档类型", value: docTypeZh },
           { label: "更新时间", value: formatRelativeTime(current.updatedAt, { now: new Date(), timeZone }) },
         ],
       },
@@ -163,23 +168,26 @@ export async function getChangeDetailVm(
         title: current.title,
         workspaceId: current.workspaceId,
         workspaceName: current.workspaceName,
-        summary: current.summary,
+        summary: summaryZh,
         status: getStatusBadge(mapChangeStatusKey(current.status)),
-        owner: current.owner,
+        owner: zh(current.owner, "role"),
         risk: "medium",
         updatedAt: formatRelativeTime(current.updatedAt, { now: new Date(), timeZone }),
-        systems: current.systems.filter((entry): entry is string => typeof entry === "string" && Boolean(entry)),
+        systems: current.systems
+          .filter((entry): entry is string => typeof entry === "string" && Boolean(entry))
+          .map((entry) => zh(entry, "system")),
         runIds: current.runIds,
-        reviewers: current.reviewers,
-        checklist: [current.sourcePath],
+        reviewers: current.reviewers.map((entry) => zh(entry, "role")),
+        checklist: [{ label: current.sourcePath, filePath: current.sourcePath }],
         timeline: [
           {
             id: current.id,
-            label: current.docType,
+            label: docTypeZh,
             at: formatRelativeTime(current.updatedAt, { now: new Date(), timeZone }),
-            note: current.summary,
+            note: summaryZh,
           },
         ],
+        sourcePath: current.sourcePath,
       },
     };
   }
@@ -205,13 +213,14 @@ export async function getChangeDetailVm(
     change: {
       ...card,
       reviewers: demoChange.reviewers,
-      checklist: demoChange.checklist,
+      checklist: demoChange.checklist.map((item) => ({ label: item, filePath: null })),
       timeline: demoChange.timeline.map((item) => ({
         id: item.id,
         label: item.label,
         at: formatRelativeTime(item.at, { now: new Date(data.now), timeZone }),
         note: item.note,
       })),
+      sourcePath: null,
     },
   };
 }

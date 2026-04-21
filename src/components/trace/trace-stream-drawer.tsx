@@ -88,7 +88,7 @@ export function TraceStreamDrawer({
             <header className="flex items-baseline justify-between">
               <div>
                 <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-cyan-300/80">
-                  Workspace
+                  工作区(Workspace)
                 </p>
                 <h2 className="mt-1 text-lg font-semibold text-white">
                   {label}
@@ -144,7 +144,7 @@ export function TraceStreamDrawer({
                             </span>
                           </div>
                           <p className="mt-1 truncate font-mono text-[10px] text-white/40">
-                            run · {event.runKey}
+                            运行(run) · {event.runKey}
                           </p>
                           {event.payload ? (
                             <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-words text-[11px] leading-5 text-white/60">

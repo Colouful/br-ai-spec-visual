@@ -129,9 +129,11 @@ export function WorkspaceBoard({ workspaceId, board }: BoardProps) {
       if (fromLane === toLane) return;
       const allowed = LANE_TRANSITIONS[fromLane] || [];
       if (!allowed.includes(toLane)) {
+        const fromTitle = laneById.get(fromLane)?.title ?? fromLane;
+        const toTitle = laneById.get(toLane)?.title ?? toLane;
         showToast(
           "info",
-          `不允许从 ${fromLane} 拖到 ${toLane}（请先经过中间阶段）`,
+          `不允许从「${fromTitle}」拖到「${toTitle}」（请先经过中间阶段）`,
         );
         return;
       }
@@ -162,7 +164,8 @@ export function WorkspaceBoard({ workspaceId, board }: BoardProps) {
       startTransition(() => {
         sendControlCommand(card, action, gate)
           .then(() => {
-            showToast("success", `已下发：${card.runKey} → ${toLane}`);
+            const toTitle = laneById.get(toLane)?.title ?? toLane;
+            showToast("success", `已下发：${card.runKey} → ${toTitle}`);
           })
           .catch((err: unknown) => {
             const message = err instanceof Error ? err.message : String(err);
@@ -179,10 +182,10 @@ export function WorkspaceBoard({ workspaceId, board }: BoardProps) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3 text-xs text-slate-300">
         <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 font-mono uppercase tracking-[0.22em]">
-          drag = approve / reject 控制指令
+          拖拽 = 通过(approve) / 驳回(reject) 控制指令
         </span>
         <span className="text-slate-400">
-          指令通过 visual control_outbox 写入，由 auto 在 cli 边界拉取并签名应用
+          指令通过 visual(可视化端) 的 control_outbox(指令发件箱) 写入，由 auto(自动执行端) 在 cli(命令行) 边界拉取并签名应用
         </span>
         {pending ? (
           <span className="text-cyan-300">下发中…</span>
@@ -264,12 +267,12 @@ export function WorkspaceBoard({ workspaceId, board }: BoardProps) {
                       </p>
                       {card.pendingGate ? (
                         <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-fuchsia-500/15 px-2 py-0.5 text-[10px] text-fuchsia-200">
-                          gate · {card.pendingGate}
+                          关卡(gate) · {card.pendingGate}
                         </p>
                       ) : null}
                       {card.currentRole ? (
                         <p className="mt-1 text-[11px] text-white/50">
-                          role: <span className="text-white/80">{card.currentRole}</span>
+                          角色(role)：<span className="text-white/80">{card.currentRole}</span>
                         </p>
                       ) : null}
                       {card.artifacts.length > 0 ? (

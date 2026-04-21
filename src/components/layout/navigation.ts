@@ -10,7 +10,8 @@ export type NavigationIcon =
   | "settings"
   | "folders"
   | "git-branch"
-  | "network";
+  | "network"
+  | "bar-chart";
 
 export interface NavigationItem {
   href: string;
@@ -92,6 +93,13 @@ const NAVIGATION_SECTIONS: NavigationSection[] = [
         label: "成员管理",
         requiredRole: "admin",
         summary: "分配角色、维护账号策略",
+      },
+      {
+        href: "/admin/installations",
+        icon: "bar-chart",
+        label: "用户安装使用",
+        requiredRole: "admin",
+        summary: "CLI 安装用户、命令使用与趋势",
       },
       {
         href: "/settings",

@@ -29,9 +29,9 @@ export default async function WorkspaceBoardPage({
     <ConsolePage
       hero={{
         eyebrow: detailVm.workspace.zone,
-        title: `${detailVm.workspace.name} · Kanban`,
+        title: `${detailVm.workspace.name} · 看板(Kanban)`,
         subtitle:
-          "把工作区里的提案、运行、守门评审与归档放在同一面板上，拖拽卡片即时下发审批指令到 auto。",
+          "把工作区里的提案、运行、守门评审与归档放在同一面板上，拖拽卡片即时下发审批指令到 auto(自动执行端)。",
         stats: [
           { label: "活跃运行/变更", value: String(boardVm.totalActive) },
           { label: "已归档", value: String(boardVm.totalArchived) },
@@ -43,7 +43,7 @@ export default async function WorkspaceBoardPage({
         <div className="flex flex-wrap items-center gap-3">
           <TraceStreamDrawer
             workspaceId={detailVm.workspace.id}
-            label="Trace Stream"
+            label="轨迹流(Trace Stream)"
           />
           <RealtimeWorkspaceBridge
             label="工作区订阅"

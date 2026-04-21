@@ -109,22 +109,22 @@ export async function computeWorkspaceHealth(
         tone: sign(openAlerts, 3),
       },
       {
-        label: "待审 Gate",
+        label: "待审关卡(Gate)",
         value: String(pendingGates),
         tone: sign(pendingGates, 3),
       },
       {
-        label: "Outbox 积压",
+        label: "发件箱(Outbox) 积压",
         value: String(pendingOutbox),
         tone: sign(pendingOutbox, 5),
       },
       {
-        label: "24h 控制回执",
+        label: "24小时控制回执",
         value: String(receivedReceipts),
         tone: tone(receivedReceipts > 0),
       },
       {
-        label: "24h 归档事件",
+        label: "24小时归档事件",
         value: String(archivedRecent),
         tone: tone(archivedRecent > 0),
       },
