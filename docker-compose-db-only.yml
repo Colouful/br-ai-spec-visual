@@ -1,0 +1,21 @@
+services:
+  db:
+    image: mariadb:11
+    restart: unless-stopped
+    ports:
+      - "13306:3306"
+    environment:
+      MARIADB_ROOT_PASSWORD: root_password_123
+      MARIADB_DATABASE: br_ai_spec_visual
+      MARIADB_USER: visual_user
+      MARIADB_PASSWORD: visual_password_123
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mariadb_data:

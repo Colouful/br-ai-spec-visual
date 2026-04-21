@@ -1,4 +1,5 @@
-import type { Server as HttpServer } from 'node:http';
+import type { IncomingMessage, Server as HttpServer } from 'node:http';
+import type { Duplex } from 'node:stream';
 
 import { nanoid } from 'nanoid';
 import WebSocket, { WebSocketServer } from 'ws';
@@ -235,7 +236,14 @@ export function publishControlCommand(command: ControlCommand): PublishResult {
   return publishEventToWorkspace(command.workspace_id, 'collector', event);
 }
 
-export function attachWebSocketServer(server: HttpServer): WebSocketServer {
+export interface AttachWebSocketServerOptions {
+  fallbackUpgrade?: (request: IncomingMessage, socket: Duplex, head: Buffer) => void;
+}
+
+export function attachWebSocketServer(
+  server: HttpServer,
+  options: AttachWebSocketServerOptions = {},
+): WebSocketServer {
   const runtime = getRuntime();
   if (runtime.wsServer) {
     return runtime.wsServer;
@@ -248,7 +256,10 @@ export function attachWebSocketServer(server: HttpServer): WebSocketServer {
     const url = new URL(request.url ?? '/', 'http://127.0.0.1');
 
     if (url.pathname !== '/ws') {
-      socket.destroy();
+      // 交还给 Next.js 处理（HMR / RSC 等），切勿 destroy，否则客户端无法水合
+      if (options.fallbackUpgrade) {
+        options.fallbackUpgrade(request, socket, head);
+      }
       return;
     }
 

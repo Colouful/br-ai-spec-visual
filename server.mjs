@@ -16,6 +16,7 @@ const app = next({
 });
 
 const handle = app.getRequestHandler();
+const upgradeHandler = app.getUpgradeHandler?.bind(app);
 await app.prepare();
 
 const wsServerModule = await tsImport('./src/server/ws-server.ts', import.meta.url);
@@ -28,7 +29,15 @@ if (typeof attachWebSocketServer !== 'function') {
   throw new TypeError('attachWebSocketServer is not exported from src/server/ws-server.ts');
 }
 
-attachWebSocketServer(httpServer);
+attachWebSocketServer(httpServer, {
+  fallbackUpgrade: (request, socket, head) => {
+    if (typeof upgradeHandler === 'function') {
+      upgradeHandler(request, socket, head);
+    } else {
+      socket.destroy();
+    }
+  },
+});
 
 httpServer.on('request', (request, response) => {
   handle(request, response);

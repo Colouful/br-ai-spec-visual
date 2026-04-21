@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "sqlite"
 }
 
 enum UserRole {
@@ -37,11 +37,11 @@ enum AlertStatus {
 }
 
 model User {
-  id           String            @id @default(cuid())
-  email        String            @unique
-  name         String           
+  id           String            @id @default(cuid()) @db.VarChar(32)
+  email        String            @unique @db.VarChar(191)
+  name         String            @db.VarChar(191)
   role         UserRole          @default(viewer)
-  passwordHash String           
+  passwordHash String            @db.VarChar(255)
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
   sessions     Session[]
@@ -49,9 +49,9 @@ model User {
 }
 
 model Session {
-  id        String   @id @default(cuid())
-  token     String   @unique
-  userId    String  
+  id        String   @id @default(cuid()) @db.VarChar(32)
+  token     String   @unique @db.VarChar(255)
+  userId    String   @db.VarChar(32)
   expiresAt DateTime
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -59,12 +59,12 @@ model Session {
 }
 
 model Workspace {
-  id              String             @id @default(cuid())
-  slug            String             @unique
-  name            String            
-  description     String?           
-  rootPath        String?           
-  status          String             @default("active")
+  id              String             @id @default(cuid()) @db.VarChar(32)
+  slug            String             @unique @db.VarChar(120)
+  name            String             @db.VarChar(191)
+  description     String?            @db.VarChar(255)
+  rootPath        String?            @db.VarChar(255)
+  status          String             @default("active") @db.VarChar(32)
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
   members         WorkspaceMember[]
@@ -83,9 +83,9 @@ model Workspace {
 }
 
 model WorkspaceMember {
-  id          String    @id @default(cuid())
-  workspaceId String   
-  userId      String   
+  id          String    @id @default(cuid()) @db.VarChar(32)
+  workspaceId String    @db.VarChar(32)
+  userId      String    @db.VarChar(32)
   role        UserRole
   createdAt   DateTime  @default(now())
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
@@ -95,10 +95,10 @@ model WorkspaceMember {
 }
 
 model WorkspaceAgent {
-  id           String      @id @default(cuid())
-  workspaceId  String     
-  agentId      String     
-  label        String?    
+  id           String      @id @default(cuid()) @db.VarChar(32)
+  workspaceId  String      @db.VarChar(32)
+  agentId      String      @db.VarChar(120)
+  label        String?     @db.VarChar(120)
   status       AgentStatus @default(offline)
   capabilities Json?
   lastSeenAt   DateTime?
@@ -110,27 +110,27 @@ model WorkspaceAgent {
 }
 
 model SyncJob {
-  id          String        @id @default(cuid())
-  workspaceId String       
-  mode        String       
+  id          String        @id @default(cuid()) @db.VarChar(32)
+  workspaceId String        @db.VarChar(32)
+  mode        String        @db.VarChar(64)
   status      SyncJobStatus @default(pending)
   summary     Json?
-  error       String?      
+  error       String?       @db.Text
   startedAt   DateTime      @default(now())
   finishedAt  DateTime?
   workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 }
 
 model RegistryItem {
-  id          String    @id @default(cuid())
-  workspaceId String   
-  category    String   
-  slug        String   
-  name        String   
-  label       String?  
-  status      String?  
+  id          String    @id @default(cuid()) @db.VarChar(32)
+  workspaceId String    @db.VarChar(32)
+  category    String    @db.VarChar(32)
+  slug        String    @db.VarChar(120)
+  name        String    @db.VarChar(191)
+  label       String?   @db.VarChar(191)
+  status      String?   @db.VarChar(32)
   version     Int       @default(1)
-  sourcePath  String   
+  sourcePath  String    @db.VarChar(255)
   payload     Json
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -140,12 +140,12 @@ model RegistryItem {
 }
 
 model RegistryRelation {
-  id             String    @id @default(cuid())
-  workspaceId    String   
-  sourceCategory String   
-  sourceSlug     String   
-  relationType   String   
-  targetSlug     String   
+  id             String    @id @default(cuid()) @db.VarChar(32)
+  workspaceId    String    @db.VarChar(32)
+  sourceCategory String    @db.VarChar(32)
+  sourceSlug     String    @db.VarChar(120)
+  relationType   String    @db.VarChar(64)
+  targetSlug     String    @db.VarChar(120)
   createdAt      DateTime  @default(now())
   workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
@@ -153,11 +153,11 @@ model RegistryRelation {
 }
 
 model RunState {
-  id             String    @id @default(cuid())
-  workspaceId    String   
-  runKey         String   
-  status         String?  
-  lastEventType  String   
+  id             String    @id @default(cuid()) @db.VarChar(32)
+  workspaceId    String    @db.VarChar(32)
+  runKey         String    @db.VarChar(120)
+  status         String?   @db.VarChar(32)
+  lastEventType  String    @db.VarChar(120)
   lastOccurredAt DateTime
   turnCount      Int       @default(0)
   payload        Json?
@@ -169,10 +169,10 @@ model RunState {
 }
 
 model RunEvent {
-  id          String    @id @default(cuid())
-  workspaceId String   
-  runKey      String   
-  eventType   String   
+  id          String    @id @default(cuid()) @db.VarChar(32)
+  workspaceId String    @db.VarChar(32)
+  runKey      String    @db.VarChar(120)
+  eventType   String    @db.VarChar(120)
   occurredAt  DateTime
   payload     Json
   createdAt   DateTime  @default(now())
@@ -180,11 +180,11 @@ model RunEvent {
 }
 
 model RunRoleExecution {
-  id          String    @id @default(cuid())
-  workspaceId String   
-  runKey      String   
-  roleSlug    String   
-  status      String   
+  id          String    @id @default(cuid()) @db.VarChar(32)
+  workspaceId String    @db.VarChar(32)
+  runKey      String    @db.VarChar(120)
+  roleSlug    String    @db.VarChar(120)
+  status      String    @db.VarChar(32)
   startedAt   DateTime?
   endedAt     DateTime?
   payload     Json?
@@ -194,14 +194,14 @@ model RunRoleExecution {
 }
 
 model ChangeDocument {
-  id          String    @id @default(cuid())
-  workspaceId String   
-  changeKey   String   
-  docType     String   
-  title       String?  
-  sourcePath  String   
-  contentHash String?  
-  status      String?  
+  id          String    @id @default(cuid()) @db.VarChar(32)
+  workspaceId String    @db.VarChar(32)
+  changeKey   String    @db.VarChar(120)
+  docType     String    @db.VarChar(64)
+  title       String?   @db.VarChar(191)
+  sourcePath  String    @db.VarChar(255)
+  contentHash String?   @db.VarChar(255)
+  status      String?   @db.VarChar(32)
   archivedAt  DateTime?
   payload     Json?
   createdAt   DateTime  @default(now())
@@ -212,11 +212,11 @@ model ChangeDocument {
 }
 
 model OmxSession {
-  id              String    @id @default(cuid())
-  workspaceId     String   
-  sessionKey      String   
-  nativeSessionId String?  
-  event           String   
+  id              String    @id @default(cuid()) @db.VarChar(32)
+  workspaceId     String    @db.VarChar(32)
+  sessionKey      String    @db.VarChar(120)
+  nativeSessionId String?   @db.VarChar(120)
+  event           String    @db.VarChar(120)
   pid             Int?
   timestamp       DateTime
   createdAt       DateTime  @default(now())
@@ -227,14 +227,14 @@ model OmxSession {
 }
 
 model OmxTurn {
-  id            String    @id @default(cuid())
-  workspaceId   String   
-  sessionKey    String   
-  turnKey       String   
-  type          String   
+  id            String    @id @default(cuid()) @db.VarChar(32)
+  workspaceId   String    @db.VarChar(32)
+  sessionKey    String    @db.VarChar(120)
+  turnKey       String    @db.VarChar(120)
+  type          String    @db.VarChar(120)
   timestamp     DateTime
-  inputPreview  String?  
-  outputPreview String?  
+  inputPreview  String?   @db.Text
+  outputPreview String?   @db.Text
   createdAt     DateTime  @default(now())
   workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
@@ -242,11 +242,11 @@ model OmxTurn {
 }
 
 model Alert {
-  id          String      @id @default(cuid())
-  workspaceId String     
+  id          String      @id @default(cuid()) @db.VarChar(32)
+  workspaceId String      @db.VarChar(32)
   level       AlertLevel
-  title       String     
-  message     String     
+  title       String      @db.VarChar(191)
+  message     String      @db.Text
   status      AlertStatus @default(open)
   payload     Json?
   createdAt   DateTime    @default(now())
@@ -255,15 +255,15 @@ model Alert {
 }
 
 model RawIngestEvent {
-  id             String    @id @default(cuid())
-  workspaceId    String   
-  eventId        String   
-  idempotencyKey String    @unique
-  sourceType     String   
-  eventType      String   
+  id             String    @id @default(cuid()) @db.VarChar(32)
+  workspaceId    String    @db.VarChar(32)
+  eventId        String    @db.VarChar(120)
+  idempotencyKey String    @unique @db.VarChar(255)
+  sourceType     String    @db.VarChar(32)
+  eventType      String    @db.VarChar(120)
   occurredAt     DateTime
-  sourcePath     String   
-  contentHash    String   
+  sourcePath     String    @db.VarChar(255)
+  contentHash    String    @db.VarChar(255)
   payload        Json
   createdAt      DateTime  @default(now())
   workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
