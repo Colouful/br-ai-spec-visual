@@ -31,6 +31,14 @@ type PublishResult = {
   attempted_connection_ids: string[];
 };
 
+type IngestProjectionRefreshPayload = {
+  source_path: string;
+  source_kind: string;
+  inserted_raw_count: number;
+  projected_raw_count: number;
+  skipped_raw_count: number;
+};
+
 type HandshakeSession = {
   connectionId: string;
   workspaceId: string;
@@ -235,6 +243,20 @@ export function publishControlCommand(command: ControlCommand): PublishResult {
   });
 
   return publishEventToWorkspace(command.workspace_id, 'collector', event);
+}
+
+export function publishIngestProjectionEvent(
+  workspaceId: string,
+  payload: IngestProjectionRefreshPayload,
+): PublishResult {
+  const event = createServerEvent({
+    workspaceId,
+    eventType: 'ingest.projected',
+    payload,
+    sourcePath: payload.source_path,
+  });
+
+  return publishEventToWorkspace(workspaceId, 'browser', event);
 }
 
 export interface AttachWebSocketServerOptions {

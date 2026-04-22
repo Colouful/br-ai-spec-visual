@@ -5,6 +5,7 @@ import { ConsolePage } from "@/components/dashboard/console-page";
 import { RealtimeWorkspaceBridge } from "@/components/realtime/realtime-workspace-bridge";
 import { WorkspaceDetail } from "@/components/workspaces/workspace-detail";
 import { getWorkspaceDetailVm } from "@/lib/view-models/workspaces";
+import { findWorkspaceBySlugOrId } from "@/lib/workspace-context/server";
 
 export default async function WorkspaceDetailPage({
   params,
@@ -12,7 +13,12 @@ export default async function WorkspaceDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const viewModel = await getWorkspaceDetailVm(id);
+  const workspace = await findWorkspaceBySlugOrId(id);
+  if (!workspace) {
+    notFound();
+  }
+
+  const viewModel = await getWorkspaceDetailVm(workspace.id);
 
   if (!viewModel) {
     notFound();

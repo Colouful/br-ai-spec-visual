@@ -76,10 +76,10 @@ export async function AppShell({ children, user }: AppShellProps) {
                   <span className="absolute inset-0 animate-ping rounded-full bg-lime-400/70" />
                   <span className="relative h-1.5 w-1.5 rounded-full bg-lime-400" />
                 </span>
-                Realtime online
+                实时在线
               </div>
               <p className="mt-2 text-xs text-slate-400">
-                WebSocket 通道与 Collector 持续同步。
+                WebSocket 与采集器持续同步。
               </p>
             </div>
           </div>

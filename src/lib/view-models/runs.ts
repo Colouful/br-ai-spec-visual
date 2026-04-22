@@ -111,11 +111,11 @@ function classifyDocStage(docType: string): RunEvidenceStageId {
 }
 
 const STAGE_LABEL: Record<RunEvidenceStageId, string> = {
-  proposal: "Proposal",
-  design: "Design",
-  tasks: "Tasks",
-  delta: "Spec Delta",
-  archive: "Archive",
+  proposal: "提案",
+  design: "设计",
+  tasks: "任务",
+  delta: "规范增量",
+  archive: "归档",
 };
 
 function classifyEventCategory(eventType: string): RunTraceEvent["category"] {

@@ -136,7 +136,7 @@ export function RealtimeWorkspaceBridge(props: {
       {errorCount > 0 ? (
         <span className="inline-flex items-center gap-1 text-amber-200">
           <Activity className="h-3.5 w-3.5" />
-          退化
+          降级
         </span>
       ) : null}
     </div>

@@ -31,7 +31,7 @@ export function WorkspacePlaceholder({
           {(upcoming ?? [
             "在工作区上下文中聚焦展示属于本项目的产物与流程",
             "与全局视图保持数据一致，但去除跨工作区噪音",
-            "结合 5 阶段 Pipeline 主视图深度联动",
+            "结合五阶段流水线主视图深度联动",
           ]).map((item) => (
             <li key={item} className="flex items-start gap-2">
               <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-300/80" />

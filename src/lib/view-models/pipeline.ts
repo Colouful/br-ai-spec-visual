@@ -23,32 +23,32 @@ export interface PipelineStageMeta {
 export const PIPELINE_STAGE_META: Record<PipelineStageId, PipelineStageMeta> = {
   spec: {
     id: "spec",
-    title: "Spec",
+    title: "规范",
     description: "提案、设计与规范文档",
     accent: "from-cyan-300/30 to-sky-700/30",
   },
   plan: {
     id: "plan",
-    title: "Plan",
+    title: "计划",
     description: "任务拆解与待执行计划",
     accent: "from-indigo-300/30 to-blue-700/30",
   },
   run: {
     id: "run",
-    title: "Run",
+    title: "运行",
     description: "正在执行的运行实例",
     accent: "from-amber-300/30 to-orange-700/30",
   },
   review: {
     id: "review",
-    title: "Review",
-    description: "守门评审 / 等待审批",
+    title: "评审",
+    description: "守门评审与等待审批",
     accent: "from-fuchsia-300/30 to-purple-700/30",
   },
   archive: {
     id: "archive",
-    title: "Archive",
-    description: "已合并 / 完成 / 归档",
+    title: "归档",
+    description: "已合并、完成或归档",
     accent: "from-emerald-300/30 to-teal-700/30",
   },
 };

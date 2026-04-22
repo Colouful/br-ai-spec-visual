@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { RealtimeWorkspaceBridge } from "@/components/realtime/realtime-workspace-bridge";
 import { getWorkspacePipelineVm } from "@/lib/view-models/pipeline-loader";
 import { findWorkspaceBySlugOrId } from "@/lib/workspace-context/server";
 
@@ -16,5 +17,15 @@ export default async function WorkspacePipelinePage({ params }: PageProps) {
     notFound();
   }
   const vm = await getWorkspacePipelineVm(workspace.id, workspace.slug);
-  return <PipelineBoard workspaceName={workspace.name} vm={vm} />;
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <RealtimeWorkspaceBridge
+          label="流水线订阅"
+          workspaceIds={[workspace.id]}
+        />
+      </div>
+      <PipelineBoard workspaceName={workspace.name} vm={vm} />
+    </div>
+  );
 }

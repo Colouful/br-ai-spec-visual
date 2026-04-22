@@ -13,13 +13,13 @@ export function ConsolePage({
   actions?: ReactNode;
 }) {
   return (
-    <div className="flex w-full flex-col gap-8">
+    <div className="flex w-full flex-col gap-6">
       <header className="glass-panel-strong relative overflow-hidden rounded-[32px] p-6 sm:p-8">
         <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent" />
         <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-32 left-20 h-64 w-64 rounded-full bg-purple-500/10 blur-3xl" />
 
-        <div className="relative flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between">
+        <div className="relative flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
           <div className="max-w-4xl">
             <p className="font-mono text-[11px] uppercase tracking-[0.38em] text-cyan-300/80">
               {hero.eyebrow}
@@ -35,7 +35,7 @@ export function ConsolePage({
             <div className="flex flex-wrap gap-3">{actions}</div>
           ) : null}
         </div>
-        <div className="relative mt-8">
+        <div className="relative mt-6">
           <MetricStrip items={hero.stats} />
         </div>
       </header>

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { validateConnectToken } from "@/server/connect-token";
+import { publishIngestProjectionEvent } from "@/server/ws-server";
 import { ingestWorkspaceRawEvents } from "@/lib/services/ingest";
 
 export const runtime = "nodejs";
@@ -66,6 +67,14 @@ export async function POST(request: Request) {
     rawEvents: rawEventsInput as Parameters<
       typeof ingestWorkspaceRawEvents
     >[0]["rawEvents"],
+  });
+
+  publishIngestProjectionEvent(workspaceId, {
+    source_path: "/api/internal/ingest/raw",
+    source_kind: String(body.source_kind ?? body.sourceKind ?? "unknown"),
+    inserted_raw_count: result.insertedRawCount,
+    projected_raw_count: result.projectedRawCount,
+    skipped_raw_count: result.skippedRawCount,
   });
 
   return NextResponse.json({

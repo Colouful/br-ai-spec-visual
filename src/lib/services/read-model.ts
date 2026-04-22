@@ -276,6 +276,7 @@ export async function listChangeReadModels() {
       title: item.title || `${item.changeKey} / ${item.docType}`,
       workspaceId: item.workspaceId,
       workspaceName: item.workspace?.name || item.workspaceId,
+      workspaceSlug: item.workspace?.slug || item.workspaceId,
       summary: `${item.docType} → ${item.sourcePath}`,
       status: item.status || "draft",
       owner: asString(payload.current_role) || "system",

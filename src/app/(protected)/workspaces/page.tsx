@@ -16,7 +16,7 @@ export default async function WorkspacesPage() {
       { label: "工作区", value: String(overview.totals.workspaces) },
       { label: "活跃运行", value: String(overview.totals.activeRuns) },
       { label: "今日归档", value: String(overview.totals.archivedToday) },
-      { label: "Outbox 积压", value: String(overview.totals.pendingOutbox) },
+      { label: "待发出队积压", value: String(overview.totals.pendingOutbox) },
     ],
   };
 
@@ -28,7 +28,7 @@ export default async function WorkspacesPage() {
             { label: "工作区", value: String(overview.totals.workspaces) },
             { label: "活跃运行", value: String(overview.totals.activeRuns) },
             { label: "今日归档", value: String(overview.totals.archivedToday) },
-            { label: "Outbox 积压", value: String(overview.totals.pendingOutbox) },
+            { label: "待发出队积压", value: String(overview.totals.pendingOutbox) },
           ]}
         />
         <WorkspacesRealtimeSection initialViewModel={viewModel} />

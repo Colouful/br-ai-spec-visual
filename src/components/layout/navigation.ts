@@ -88,9 +88,9 @@ const WORKSPACE_TEMPLATE: NavigationSection[] = [
         {
           segment: "pipeline",
           icon: "workflow",
-          label: "Pipeline",
+          label: "流水线",
           requiredRole: "viewer",
-          summary: "Spec → Plan → Run → Review → Archive 五阶段主视图",
+          summary: "规范 → 计划 → 运行 → 评审 → 归档 五阶段主视图",
         },
       ] satisfies WorkspaceItemTemplate[]
     ).map((tpl) => buildPlaceholderItem(tpl)),

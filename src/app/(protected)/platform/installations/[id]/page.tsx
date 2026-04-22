@@ -8,6 +8,13 @@ import { getInstallationDetail } from "@/lib/services/installations-query";
 
 export const dynamic = "force-dynamic";
 
+function formatTelemetryStatus(status: string): string {
+  const s = status.toLowerCase();
+  if (s === "success") return "成功";
+  if (s === "failed") return "失败";
+  return status;
+}
+
 export default async function InstallationDetailPage({
   params,
 }: {
@@ -31,7 +38,7 @@ export default async function InstallationDetailPage({
   return (
     <ConsolePage
       hero={{
-        eyebrow: "Installation",
+        eyebrow: "安装实例",
         title: installation.hostname ?? installation.installationId,
         subtitle: `机器 ID: ${installation.installationId}`,
         stats: [
@@ -58,19 +65,19 @@ export default async function InstallationDetailPage({
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1.3fr_0.7fr]">
-        <Panel eyebrow="Profile" title="基础信息">
+        <Panel eyebrow="画像" title="基础信息">
           <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-xs">
             <Info label="用户名" value={installation.username} />
             <Info label="系统" value={installation.platform} />
             <Info label="架构" value={installation.arch} />
-            <Info label="OS Release" value={installation.osRelease} />
-            <Info label="Node.js" value={installation.nodeVersion} />
-            <Info label="最近 CLI" value={installation.lastCliVersion} />
+            <Info label="系统版本" value={installation.osRelease} />
+            <Info label="Node" value={installation.nodeVersion} />
+            <Info label="最近命令行版本" value={installation.lastCliVersion} />
             <Info label="最近命令" value={installation.lastCommand} />
-            <Info label="Installation ID" value={installation.installationId} mono />
+            <Info label="安装实例 ID" value={installation.installationId} mono />
           </dl>
         </Panel>
-        <Panel eyebrow="Status" title="命令状态分布">
+        <Panel eyebrow="状态" title="命令状态分布">
           <Donut
             items={Array.from(statusCounts.entries()).map(([label, value]) => ({
               label,
@@ -79,7 +86,7 @@ export default async function InstallationDetailPage({
           />
         </Panel>
 
-        <Panel eyebrow="Commands" title="命令调用频次">
+        <Panel eyebrow="命令" title="命令调用频次">
           <BarList
             items={Array.from(commandCounts.entries())
               .map(([label, value]) => ({ label, value }))
@@ -87,7 +94,7 @@ export default async function InstallationDetailPage({
           />
         </Panel>
 
-        <Panel eyebrow="Projects" title={`项目列表 · ${projects.length}`}>
+        <Panel eyebrow="项目" title={`项目列表 · ${projects.length}`}>
           {projects.length === 0 ? (
             <p className="rounded-2xl border border-dashed border-white/10 bg-black/20 px-4 py-8 text-center text-sm text-white/50">
               该机器尚未关联任何项目
@@ -120,7 +127,7 @@ export default async function InstallationDetailPage({
         </Panel>
       </div>
 
-      <Panel eyebrow="Timeline" title={`近 ${events.length} 条事件`} className="mt-4">
+      <Panel eyebrow="时间线" title={`近 ${events.length} 条事件`} className="mt-4">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-left text-xs">
             <thead>
@@ -129,8 +136,8 @@ export default async function InstallationDetailPage({
                 <th className="px-3 py-2">命令</th>
                 <th className="px-3 py-2">状态</th>
                 <th className="px-3 py-2">耗时</th>
-                <th className="px-3 py-2">CLI</th>
-                <th className="px-3 py-2">Profile</th>
+                <th className="px-3 py-2">命令行</th>
+                <th className="px-3 py-2">技术栈</th>
                 <th className="px-3 py-2">项目</th>
                 <th className="px-3 py-2">错误</th>
               </tr>
@@ -164,7 +171,7 @@ export default async function InstallationDetailPage({
                               : "bg-white/10 text-white/60"
                         }`}
                       >
-                        {event.status}
+                        {formatTelemetryStatus(event.status)}
                       </span>
                     </td>
                     <td className="px-3 py-2 font-mono text-white/60">

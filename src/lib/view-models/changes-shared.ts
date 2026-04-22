@@ -10,6 +10,7 @@ export interface ChangeApiItem {
   title: string;
   workspaceId: string;
   workspaceName: string;
+  workspaceSlug?: string;
   summary: string;
   status: string;
   owner: string;
@@ -46,6 +47,7 @@ export function buildChangeCardFromApiItem(
     title: item.title,
     workspaceId: item.workspaceId,
     workspaceName: item.workspaceName,
+    workspaceSlug: item.workspaceSlug ?? item.workspaceId,
     summary: item.summary,
     status: getStatusBadge(mapChangeStatusKey(item.status)),
     owner: item.owner,
@@ -78,4 +80,3 @@ export function buildChangeSignals(cards: ChangeCardVm[]): MetricVm[] {
     { label: "关联运行", value: String(cards.reduce((sum, card) => sum + card.runIds.length, 0)) },
   ];
 }
-

@@ -16,7 +16,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   members: "成员",
   settings: "设置",
   board: "看板",
-  pipeline: "Pipeline",
+  pipeline: "流水线",
   admin: "平台",
   platform: "平台",
   installations: "用户安装使用",

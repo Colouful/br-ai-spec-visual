@@ -179,19 +179,24 @@ export function WorkspaceBoard({ workspaceId, board }: BoardProps) {
   );
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-300">
-        <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 font-mono uppercase tracking-[0.22em]">
-          拖拽 = 通过(approve) / 驳回(reject) 控制指令
-        </span>
-        <span className="text-slate-400">
-          指令通过 visual(可视化端) 的 control_outbox(指令发件箱) 写入，由 auto(自动执行端) 在 cli(命令行) 边界拉取并签名应用
-        </span>
-        {pending ? (
-          <span className="text-cyan-300">下发中…</span>
-        ) : null}
-      </div>
-      <div className="grid gap-4 lg:grid-cols-5">
+    <div className="space-y-5">
+      <details className="group rounded-2xl border border-white/10 bg-white/[0.02] open:border-cyan-300/20 open:bg-white/[0.04]">
+        <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-left text-xs text-slate-300 marker:content-none [&::-webkit-details-marker]:hidden">
+          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 font-mono uppercase tracking-[0.22em] text-slate-200">
+            拖拽 = 通过(approve) / 驳回(reject) 控制指令
+          </span>
+          <span className="text-slate-500">展开说明</span>
+          {pending ? (
+            <span className="ml-auto text-cyan-300">下发中…</span>
+          ) : null}
+        </summary>
+        <p className="border-t border-white/5 px-4 py-3 text-xs leading-relaxed text-slate-400">
+          指令通过 visual(可视化端) 的 control_outbox(指令发件箱) 写入，由 auto(自动执行端) 在
+          cli(命令行) 边界拉取并签名应用
+        </p>
+      </details>
+      <div className="overflow-x-auto overscroll-x-contain pb-2 [-webkit-overflow-scrolling:touch]">
+        <div className="inline-flex min-h-[min(28rem,70vh)] w-max items-stretch gap-5 pr-1">
         {LANE_ORDER.map((laneId) => {
           const lane = laneById.get(laneId);
           if (!lane) return null;
@@ -216,11 +221,11 @@ export function WorkspaceBoard({ workspaceId, board }: BoardProps) {
                 if (!cardId || !fromLane) return;
                 handleDrop(cardId, fromLane, laneId);
               }}
-              className={`flex min-h-[480px] flex-col rounded-[28px] border border-white/8 bg-gradient-to-b ${lane.accent} p-4 transition ${
+              className={`flex w-[min(20rem,85vw)] min-w-[17.5rem] max-w-[22rem] shrink-0 flex-col rounded-[28px] border border-white/8 bg-gradient-to-b ${lane.accent} p-5 transition ${
                 isHover ? "ring-2 ring-cyan-300/60" : ""
               }`}
             >
-              <header className="mb-4 flex items-baseline justify-between">
+              <header className="mb-3 flex items-baseline justify-between gap-2">
                 <div>
                   <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-white/70">
                     {lane.title}
@@ -231,7 +236,7 @@ export function WorkspaceBoard({ workspaceId, board }: BoardProps) {
                   {lane.cards.length}
                 </span>
               </header>
-              <div className="flex-1 space-y-3 overflow-y-auto pr-1">
+              <div className="flex-1 space-y-4 overflow-y-auto pr-1">
                 {lane.cards.length === 0 ? (
                   <p className="rounded-2xl border border-dashed border-white/10 bg-black/20 p-4 text-center text-xs text-white/40">
                     暂无卡片
@@ -247,7 +252,7 @@ export function WorkspaceBoard({ workspaceId, board }: BoardProps) {
                         setDragCardId(card.id);
                       }}
                       onDragEnd={() => setDragCardId(null)}
-                      className={`group cursor-grab rounded-2xl border border-white/10 bg-black/30 p-3 backdrop-blur transition hover:border-cyan-300/40 hover:bg-black/40 ${
+                      className={`group cursor-grab rounded-2xl border border-white/10 bg-black/30 p-4 backdrop-blur transition hover:border-cyan-300/40 hover:bg-black/40 ${
                         dragCardId === card.id ? "opacity-60" : ""
                       }`}
                     >
@@ -294,6 +299,7 @@ export function WorkspaceBoard({ workspaceId, board }: BoardProps) {
             </div>
           );
         })}
+        </div>
       </div>
       {toast ? (
         <div

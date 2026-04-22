@@ -102,7 +102,7 @@ export function ChangeDetail({ viewModel }: { viewModel: ChangeDetailVm }) {
 
           <div className="flex flex-wrap gap-3 pt-1">
             <Link
-              href={`/workspaces/${change.workspaceId}`}
+              href={`/w/${encodeURIComponent(change.workspaceSlug)}/pipeline`}
               className="rounded-full border border-cyan-300/25 bg-cyan-300/10 px-4 py-2 text-sm font-medium text-cyan-50 transition hover:border-cyan-200/50 hover:bg-cyan-300/18 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60"
             >
               打开工作区

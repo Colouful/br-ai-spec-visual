@@ -45,7 +45,7 @@ describe("workspace navigation", () => {
   it("includes the pipeline tab and links to the slug-scoped path", () => {
     const sections = getWorkspaceNavigationSections("viewer", SLUG);
     const items = sections.flatMap((section) => section.items);
-    const pipeline = items.find((it) => it.label === "Pipeline");
+    const pipeline = items.find((it) => it.label === "流水线");
     expect(pipeline).toBeDefined();
     expect(pipeline?.href).toBe(`/w/${SLUG}/pipeline`);
   });
@@ -74,7 +74,7 @@ describe("workspace navigation", () => {
     const labels = getWorkspaceNavigationSections("admin", SLUG)
       .flatMap((section) => section.items)
       .map((item) => item.label);
-    expect(labels).toContain("Pipeline");
+    expect(labels).toContain("流水线");
     expect(labels).toContain("设置");
     expect(labels).toContain("成员");
   });

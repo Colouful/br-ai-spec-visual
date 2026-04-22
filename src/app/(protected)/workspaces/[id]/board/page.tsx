@@ -8,6 +8,7 @@ import { WorkspaceHealthCard } from "@/components/workspaces/workspace-health-ca
 import { getWorkspaceBoardVm } from "@/lib/view-models/board";
 import { computeWorkspaceHealth } from "@/lib/view-models/workspace-health";
 import { getWorkspaceDetailVm } from "@/lib/view-models/workspaces";
+import { findWorkspaceBySlugOrId } from "@/lib/workspace-context/server";
 
 export default async function WorkspaceBoardPage({
   params,
@@ -15,10 +16,15 @@ export default async function WorkspaceBoardPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const workspace = await findWorkspaceBySlugOrId(id);
+  if (!workspace) {
+    notFound();
+  }
+
   const [detailVm, boardVm, health] = await Promise.all([
-    getWorkspaceDetailVm(id),
-    getWorkspaceBoardVm(id),
-    computeWorkspaceHealth(id),
+    getWorkspaceDetailVm(workspace.id),
+    getWorkspaceBoardVm(workspace.id),
+    computeWorkspaceHealth(workspace.id),
   ]);
 
   if (!detailVm) {
@@ -52,8 +58,10 @@ export default async function WorkspaceBoardPage({
         </div>
       }
     >
-      <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
-        <WorkspaceBoard workspaceId={detailVm.workspace.id} board={boardVm} />
+      <div className="grid min-w-0 gap-8 xl:grid-cols-[minmax(0,1fr)_min(18rem,100%)] xl:items-start">
+        <div className="min-w-0">
+          <WorkspaceBoard workspaceId={detailVm.workspace.id} board={boardVm} />
+        </div>
         <WorkspaceHealthCard health={health} />
       </div>
     </ConsolePage>

@@ -68,8 +68,8 @@ export function LoginHero({ accountHints }: LoginHeroProps) {
               />
               <HeroStat
                 icon={<Sparkles className="h-5 w-5 text-purple-300" />}
-                title="Next.js 16"
-                desc="应用路由壳层"
+                title="应用壳层"
+                desc="同构路由与流式界面"
               />
             </div>
           </div>

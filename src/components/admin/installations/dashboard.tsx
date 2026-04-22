@@ -34,6 +34,14 @@ function formatRelative(iso: string): string {
   return `${Math.floor(diff / 86_400_000)} 天前`;
 }
 
+function formatTelemetryStatus(status: string | null): string {
+  if (!status) return "—";
+  const s = status.toLowerCase();
+  if (s === "success") return "成功";
+  if (s === "failed") return "失败";
+  return status;
+}
+
 export function InstallationsDashboard({ stats, initialList }: DashboardProps) {
   const [tab, setTab] = useState<Tab>("list");
   const [query, setQuery] = useState("");
@@ -77,7 +85,7 @@ export function InstallationsDashboard({ stats, initialList }: DashboardProps) {
 
       {tab === "list" ? (
         <Panel
-          eyebrow="Users"
+          eyebrow="用户"
           title={`安装用户列表 · 共 ${initialList.total}`}
           aside={
             <input
@@ -96,7 +104,7 @@ export function InstallationsDashboard({ stats, initialList }: DashboardProps) {
                   <th className="px-3 py-2">机器</th>
                   <th className="px-3 py-2">用户</th>
                   <th className="px-3 py-2">系统</th>
-                  <th className="px-3 py-2">CLI</th>
+                  <th className="px-3 py-2">命令行版本</th>
                   <th className="px-3 py-2">最近命令</th>
                   <th className="px-3 py-2 text-right">事件</th>
                   <th className="px-3 py-2 text-right">项目</th>
@@ -172,7 +180,7 @@ export function InstallationsDashboard({ stats, initialList }: DashboardProps) {
 function TrendsTab({ stats }: { stats: InstallationsStats }) {
   return (
     <div className="grid gap-4 xl:grid-cols-2">
-      <Panel eyebrow="Daily active" title="近 30 天活跃 Installation">
+      <Panel eyebrow="日活趋势" title="近 30 天活跃安装实例">
         <LineChart
           points={stats.dailyActive.map((point) => ({
             x: point.date.slice(5),
@@ -180,7 +188,7 @@ function TrendsTab({ stats }: { stats: InstallationsStats }) {
           }))}
         />
       </Panel>
-      <Panel eyebrow="Daily events" title="近 30 天命令调用量">
+      <Panel eyebrow="日事件量" title="近 30 天命令调用量">
         <LineChart
           points={stats.dailyActive.map((point) => ({
             x: point.date.slice(5),
@@ -188,7 +196,7 @@ function TrendsTab({ stats }: { stats: InstallationsStats }) {
           }))}
         />
       </Panel>
-      <Panel eyebrow="Commands" title="命令使用分布">
+      <Panel eyebrow="命令" title="命令使用分布">
         <BarList
           items={stats.commandDistribution.map((item) => ({
             label: item.command,
@@ -196,7 +204,7 @@ function TrendsTab({ stats }: { stats: InstallationsStats }) {
           }))}
         />
       </Panel>
-      <Panel eyebrow="Status" title="命令执行状态">
+      <Panel eyebrow="状态" title="命令执行状态">
         <Donut
           items={stats.statusDistribution.map((item) => ({
             label: item.status,
@@ -204,7 +212,7 @@ function TrendsTab({ stats }: { stats: InstallationsStats }) {
           }))}
         />
       </Panel>
-      <Panel eyebrow="Platform" title="操作系统分布">
+      <Panel eyebrow="系统平台" title="操作系统分布">
         <Donut
           items={stats.platformDistribution.map((item) => ({
             label: item.platform,
@@ -212,7 +220,7 @@ function TrendsTab({ stats }: { stats: InstallationsStats }) {
           }))}
         />
       </Panel>
-      <Panel eyebrow="CLI version" title="CLI 版本渗透率">
+      <Panel eyebrow="命令行版本" title="命令行工具版本分布">
         <BarList
           items={stats.cliVersionDistribution.map((item) => ({
             label: item.cliVersion,
@@ -227,14 +235,14 @@ function TrendsTab({ stats }: { stats: InstallationsStats }) {
 function AdoptionTab({ stats }: { stats: InstallationsStats }) {
   return (
     <div className="grid gap-4 xl:grid-cols-2">
-      <Panel eyebrow="Projects" title="项目接入总览">
+      <Panel eyebrow="项目" title="项目接入总览">
         <div className="grid grid-cols-3 gap-3 text-center">
           <Stat label="累计项目" value={stats.totalProjects} />
           <Stat label="近 7 天新增" value={stats.newProjectsLast7d} accent="emerald" />
           <Stat label="近 30 天新增" value={stats.newProjectsLast30d} accent="cyan" />
         </div>
       </Panel>
-      <Panel eyebrow="Profile" title="技术栈 Profile 分布">
+      <Panel eyebrow="技术栈" title="技术栈画像分布">
         <Donut
           items={stats.profileDistribution.map((item) => ({
             label: item.profile,
@@ -242,11 +250,11 @@ function AdoptionTab({ stats }: { stats: InstallationsStats }) {
           }))}
         />
       </Panel>
-      <Panel eyebrow="Events" title="全部事件统计" className="xl:col-span-2">
+      <Panel eyebrow="事件" title="全部事件统计" className="xl:col-span-2">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Stat label="累计安装" value={stats.totalInstallations} />
           <Stat label="累计事件" value={stats.totalEvents} />
-          <Stat label="MAU" value={stats.mau} accent="cyan" />
+          <Stat label="月活" value={stats.mau} accent="cyan" />
           <Stat label="今日事件" value={stats.eventsToday} accent="emerald" />
         </div>
       </Panel>
@@ -310,8 +318,8 @@ function RealtimeTab() {
 
   return (
     <Panel
-      eyebrow="Live"
-      title="最近 2 分钟活跃 Installation"
+      eyebrow="实时"
+      title="最近 2 分钟活跃安装"
       aside={
         <span className="flex items-center gap-2 text-[11px] text-emerald-300/80">
           <PulseDot /> 每 5 秒自动刷新
@@ -324,7 +332,7 @@ function RealtimeTab() {
         </p>
       ) : items.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-white/10 bg-black/20 px-4 py-10 text-center text-sm text-white/50">
-          当前没有活跃 CLI 会话
+          当前没有活跃的命令行会话
         </p>
       ) : (
         <ul className="space-y-2">
@@ -340,7 +348,7 @@ function RealtimeTab() {
                     {item.hostname ?? item.installationId.slice(0, 12)}
                   </p>
                   <p className="text-[10px] text-white/40">
-                    {item.installationId.slice(0, 18)}… · {item.username ?? "anonymous"}
+                    {item.installationId.slice(0, 18)}… · {item.username ?? "匿名"}
                   </p>
                 </div>
               </div>
@@ -357,7 +365,7 @@ function RealtimeTab() {
                             : "bg-white/10 text-white/60"
                       }`}
                     >
-                      {item.lastStatus}
+                      {formatTelemetryStatus(item.lastStatus)}
                     </span>
                   ) : null}
                 </p>

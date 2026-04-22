@@ -20,15 +20,18 @@ export function PipelineBoard({ workspaceName, vm }: PipelineBoardProps) {
     <section className="space-y-6">
       <header className="space-y-3">
         <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-cyan-300/80">
-          {workspaceName} · Pipeline
+          {workspaceName} · 流水线
         </p>
         <h1 className="text-2xl font-semibold text-white sm:text-3xl">
           5 阶段流程主视图
         </h1>
         <p className="max-w-3xl text-sm leading-7 text-slate-400">
-          Spec → Plan → Run → Review → Archive。Change 走规范与计划；<strong className="font-medium text-slate-300">Run
-          列</strong>展示的是从自动机侧同步的<strong className="font-medium text-slate-300">运行实例</strong>，与
-          &ldquo;当前是否有一条需求在写&rdquo; 不是同一张表，二者可以单独为空。
+          五阶段为：规范 → 计划 → 运行 → 评审 → 归档。变更文档主要落在规范与计划列；<strong
+            className="font-medium text-slate-300"
+          >
+            运行
+          </strong>
+          列展示的是从执行侧同步的<strong className="font-medium text-slate-300">运行实例</strong>，与&ldquo;当前是否有一条需求在写&rdquo;不是同一张表，二者可以单独为空。
         </p>
         {vm.hiddenStaleRuns > 0 ? (
           <p className="max-w-3xl text-xs leading-6 text-slate-500">
@@ -41,9 +44,9 @@ export function PipelineBoard({ workspaceName, vm }: PipelineBoardProps) {
             >
               运行
             </Link>{" "}
-            中仍可查看全部 <span className="font-mono">RunState</span> 记录。阈值由环境变量
+            中仍可查看全部运行状态记录。阈值由环境变量
             <span className="font-mono"> PIPELINE_STALE_RUN_MAX_AGE_HOURS</span> 控制（默认
-            24h）。
+            24 小时）。
           </p>
         ) : null}
       </header>
@@ -149,7 +152,7 @@ function PipelineCard({ card }: { card: PipelineCardVm }) {
                 : "bg-cyan-500/15 text-cyan-200"
             }`}
           >
-            {card.kind}
+            {card.kind === "run" ? "运行" : "变更"}
           </span>
           {card.ownerRole ? (
             <span className="rounded-md bg-white/5 px-1.5 py-0.5 text-[10px] text-slate-300">
@@ -165,7 +168,7 @@ function PipelineCard({ card }: { card: PipelineCardVm }) {
       <p className="mt-1 line-clamp-1 text-[11px] text-slate-400">{card.subtitle}</p>
       {card.pendingGate ? (
         <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-fuchsia-500/15 px-2 py-0.5 text-[10px] text-fuchsia-200">
-          gate · {card.pendingGate}
+          门禁 · {card.pendingGate}
         </p>
       ) : null}
     </Link>

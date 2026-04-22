@@ -1,5 +1,7 @@
 import { createHmac } from "node:crypto";
 
+import type { Prisma } from "@prisma/client";
+
 import { prisma } from "@/lib/db/prisma";
 import type { ControlCommand } from "@/lib/contracts/control";
 import { writeOutboxToFileInbox } from "@/server/control-file-transport";
@@ -43,7 +45,7 @@ export async function enqueueControlOutbox(input: EnqueueOutboxInput) {
       workspaceId: input.workspaceId,
       runKey: input.runKey,
       command: input.command,
-      payload: input.payload,
+      payload: input.payload as Prisma.InputJsonObject,
       actorId: input.actorId ?? null,
       signature: "",
       expiresAt,

@@ -25,7 +25,7 @@ export default async function WorkspaceChangeDetailPage({
   return (
     <ConsolePage
       hero={viewModel.hero}
-      actions={<RealtimeWorkspaceBridge label="Change" workspaceIds={[viewModel.change.workspaceId]} />}
+      actions={<RealtimeWorkspaceBridge label="变更订阅" workspaceIds={[viewModel.change.workspaceId]} />}
     >
       <ChangeDetail viewModel={viewModel} />
     </ConsolePage>

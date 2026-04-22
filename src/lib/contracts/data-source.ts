@@ -6,6 +6,7 @@ export const PRIMARY_DATA_SOURCE_KINDS = [
 export const SECONDARY_DATA_SOURCE_KINDS = [
   "run-state-json",
   "openspec-json",
+  "repo-map-json",
   "hook-event",
   "control-receipt",
 ] as const;

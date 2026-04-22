@@ -2,6 +2,7 @@ import type {
   RawIngestEventDraft,
   StoredRawIngestEvent,
 } from "@/lib/contracts/ingest";
+import type { Prisma } from "@prisma/client";
 import { createEmptyProjectionBatch } from "@/lib/contracts/ingest";
 import { readString, isJsonRecord } from "@/lib/ingest/source-utils";
 import { prisma } from "@/lib/db/prisma";
@@ -43,7 +44,9 @@ export function projectControlReceiptRawEvent(
         data: {
           status,
           reason: reason ?? undefined,
-          appliedSnapshot: appliedSnapshot ?? undefined,
+          appliedSnapshot: appliedSnapshot
+            ? (appliedSnapshot as Prisma.InputJsonObject)
+            : undefined,
           appliedAt: status === "applied" ? new Date() : undefined,
           deliveredAt: new Date(),
         },

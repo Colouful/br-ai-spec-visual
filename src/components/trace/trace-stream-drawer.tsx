@@ -34,7 +34,7 @@ const CATEGORY_STYLE: Record<string, string> = {
 
 export function TraceStreamDrawer({
   workspaceId,
-  label = "Trace Stream",
+  label = "追踪流",
   refreshIntervalMs = 5000,
 }: Props) {
   const [open, setOpen] = useState(false);

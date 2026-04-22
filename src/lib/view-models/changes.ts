@@ -16,6 +16,7 @@ export interface ChangeCardVm {
   title: string;
   workspaceId: string;
   workspaceName: string;
+  workspaceSlug: string;
   summary: string;
   status: ReturnType<typeof getStatusBadge>;
   owner: string;
@@ -63,6 +64,7 @@ async function buildDemoChangeCard(changeId: string, timeZone: string): Promise<
     title: demoChange.title,
     workspaceId: demoChange.workspaceId,
     workspaceName: workspace?.name ?? demoChange.workspaceId,
+    workspaceSlug: workspace?.id ?? demoChange.workspaceId,
     summary: demoChange.summary,
     status: getStatusBadge(demoChange.status),
     owner: demoChange.owner,
@@ -84,6 +86,7 @@ export async function getChangesPageVm(timeZone = "Asia/Shanghai"): Promise<Chan
       title: change.title,
       workspaceId: change.workspaceId,
       workspaceName: change.workspaceName,
+      workspaceSlug: change.workspaceSlug,
       summary: change.summary,
       status: getStatusBadge(mapChangeStatusKey(change.status)),
       owner: change.owner,
@@ -181,6 +184,7 @@ export async function getChangeDetailVm(
         title: current.title,
         workspaceId: current.workspaceId,
         workspaceName: current.workspaceName,
+        workspaceSlug: current.workspaceSlug,
         summary: summaryZh,
         status: getStatusBadge(mapChangeStatusKey(current.status)),
         owner: zh(current.owner, "role"),
