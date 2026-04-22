@@ -33,6 +33,7 @@ export default async function WorkspaceBoardPage({
 
   return (
     <ConsolePage
+      contentStretch
       hero={{
         eyebrow: detailVm.workspace.zone,
         title: `${detailVm.workspace.name} · 看板(Kanban)`,
@@ -58,11 +59,11 @@ export default async function WorkspaceBoardPage({
         </div>
       }
     >
-      <div className="grid min-w-0 gap-8 xl:grid-cols-[minmax(0,1fr)_min(18rem,100%)] xl:items-start">
-        <div className="min-w-0">
+      <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col gap-6">
+        <WorkspaceHealthCard className="shrink-0" health={health} />
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <WorkspaceBoard workspaceId={detailVm.workspace.id} board={boardVm} />
         </div>
-        <WorkspaceHealthCard health={health} />
       </div>
     </ConsolePage>
   );

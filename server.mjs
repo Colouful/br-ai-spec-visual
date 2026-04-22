@@ -1,4 +1,5 @@
 import { createServer } from 'node:http';
+import { networkInterfaces } from 'node:os';
 
 import dotenv from 'dotenv';
 import next from 'next';
@@ -12,7 +13,9 @@ dotenv.config({ path: '.env.local', override: false, quiet: true });
 dotenv.config({ path: '.env', override: false, quiet: true });
 
 const dev = process.env.NODE_ENV !== 'production';
-const hostname = process.env.HOSTNAME ?? '0.0.0.0';
+/** 监听地址：优先 LISTEN_HOST，其次 HOST（常见于容器）、HOSTNAME，默认可从局域网访问 */
+const hostname =
+  process.env.LISTEN_HOST ?? process.env.HOST ?? process.env.HOSTNAME ?? '0.0.0.0';
 const port = Number.parseInt(process.env.PORT ?? '3000', 10);
 const httpServer = createServer();
 const app = next({
@@ -53,4 +56,20 @@ httpServer.on('request', (request, response) => {
 
 httpServer.listen(port, hostname, () => {
   console.log(`> Server listening at http://${hostname}:${port}`);
+  if (dev) {
+    const nics = networkInterfaces();
+    const ipv4 = [];
+    for (const list of Object.values(nics)) {
+      if (!list) continue;
+      for (const e of list) {
+        if ((e.family === 'IPv4' || e.family === 4) && !e.internal) {
+          ipv4.push(e.address);
+        }
+      }
+    }
+    const unique = [...new Set(ipv4)];
+    for (const ip of unique) {
+      console.log(`> 局域网: http://${ip}:${port}（next.config 已随开发模式放宽 allowedDevOrigins）`);
+    }
+  }
 });

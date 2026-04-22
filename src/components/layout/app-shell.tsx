@@ -48,7 +48,7 @@ export async function AppShell({ children, user }: AppShellProps) {
 
   return (
     <div className="relative min-h-screen text-slate-100">
-      <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col lg:flex-row">
+      <div className="mx-auto flex min-h-screen flex-col lg:flex-row">
         {/* Sidebar (desktop) */}
         <aside className="hidden lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-[280px] lg:shrink-0 lg:flex-col lg:border-r lg:border-white/8 lg:bg-[#070b14]/60 lg:backdrop-blur-xl">
           <div className="flex h-full flex-col p-5">
@@ -86,14 +86,18 @@ export async function AppShell({ children, user }: AppShellProps) {
         </aside>
 
         {/* Main */}
-        <div className="flex min-h-screen flex-1 flex-col">
+        <div className="flex min-h-screen min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-30 border-b border-white/8 bg-[#05070d]/70 backdrop-blur-xl">
             <div className="flex items-center gap-4 px-4 py-3 sm:px-6 lg:px-8">
               <div className="flex items-center gap-3 lg:hidden">
                 <BrandMark compact />
               </div>
               <div className="hidden min-w-0 flex-1 lg:block">
-                <Breadcrumbs workspaceLabelMap={Object.fromEntries(workspaces.map((w) => [w.slug, w.name]))} />
+                <Breadcrumbs
+                  workspaceLabelMap={Object.fromEntries(
+                    workspaces.map((w) => [w.slug, w.name]),
+                  )}
+                />
               </div>
               <div className="ml-auto flex items-center gap-2 sm:gap-3">
                 <WorkspaceSwitcher workspaces={switcherWorkspaces} />
@@ -106,8 +110,8 @@ export async function AppShell({ children, user }: AppShellProps) {
             </div>
           </header>
 
-          <main className="flex-1 px-4 pb-24 pt-5 sm:px-6 lg:px-8 lg:pb-8 lg:pt-8">
-            <MotionPage className="min-h-[calc(100vh-7rem)]">
+          <main className="flex min-h-0 min-w-0 flex-1 flex-col px-4 pb-24 pt-5 sm:px-6 lg:px-8 lg:pb-8 lg:pt-8">
+            <MotionPage className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
               {children}
             </MotionPage>
           </main>
