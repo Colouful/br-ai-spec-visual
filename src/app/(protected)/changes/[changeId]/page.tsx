@@ -1,17 +1,15 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
-import { ChangeDetail } from "@/components/changes/change-detail";
-import { ConsolePage } from "@/components/dashboard/console-page";
-import { RealtimeWorkspaceBridge } from "@/components/realtime/realtime-workspace-bridge";
+import { prisma } from "@/lib/db/prisma";
 import { getChangeDetailVm } from "@/lib/view-models/changes";
 
-export default async function ChangeDetailPage({
+export default async function ChangeDetailRedirectPage({
   params,
 }: {
   params: Promise<{ changeId: string }>;
 }) {
   const { changeId } = await params;
-  const decodedChangeId = (() => {
+  const decoded = (() => {
     try {
       return decodeURIComponent(changeId);
     } catch {
@@ -19,19 +17,12 @@ export default async function ChangeDetailPage({
     }
   })();
   const viewModel =
-    (await getChangeDetailVm(decodedChangeId)) ??
-    (await getChangeDetailVm(changeId));
-
-  if (!viewModel) {
-    notFound();
-  }
-
-  return (
-    <ConsolePage
-      hero={viewModel.hero}
-      actions={<RealtimeWorkspaceBridge label="Change" workspaceIds={[viewModel.change.workspaceId]} />}
-    >
-      <ChangeDetail viewModel={viewModel} />
-    </ConsolePage>
-  );
+    (await getChangeDetailVm(decoded)) ?? (await getChangeDetailVm(changeId));
+  if (!viewModel) notFound();
+  const ws = await prisma.workspace.findUnique({
+    where: { id: viewModel.change.workspaceId },
+    select: { slug: true },
+  });
+  const slug = ws?.slug ?? viewModel.change.workspaceId;
+  redirect(`/w/${encodeURIComponent(slug)}/changes/${encodeURIComponent(changeId)}`);
 }

@@ -12,6 +12,7 @@ import {
   Network,
   Settings,
   Users,
+  Workflow,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -31,6 +32,7 @@ const ICONS: Record<NavigationIcon, typeof LayoutDashboard> = {
   network: Network,
   settings: Settings,
   users: Users,
+  workflow: Workflow,
 };
 
 export function SidebarNav({ sections }: { sections: NavigationSection[] }) {

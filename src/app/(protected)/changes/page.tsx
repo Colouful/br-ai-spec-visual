@@ -1,13 +1,9 @@
-import { ConsolePage } from "@/components/dashboard/console-page";
-import { ChangesRealtimeSection } from "@/components/changes/changes-realtime-section";
-import { getChangesPageVm } from "@/lib/view-models/changes";
+import { redirect } from "next/navigation";
 
-export default async function ChangesPage() {
-  const viewModel = await getChangesPageVm();
+import { resolveDefaultWorkspaceSlug } from "@/lib/workspace-context/server";
 
-  return (
-    <ConsolePage hero={viewModel.hero}>
-      <ChangesRealtimeSection initialViewModel={viewModel} />
-    </ConsolePage>
-  );
+export default async function ChangesRedirectPage() {
+  const slug = await resolveDefaultWorkspaceSlug();
+  if (slug) redirect(`/w/${encodeURIComponent(slug)}/changes`);
+  redirect("/workspaces");
 }

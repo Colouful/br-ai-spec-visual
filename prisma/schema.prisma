@@ -233,8 +233,8 @@ model OmxTurn {
   turnKey       String   
   type          String   
   timestamp     DateTime
-  inputPreview  String?  
-  outputPreview String?  
+  inputPreview  String?   @db.Text
+  outputPreview String?   @db.Text
   createdAt     DateTime  @default(now())
   workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 

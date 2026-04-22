@@ -7,7 +7,6 @@ import {
   useSpring,
   useTransform,
 } from "framer-motion";
-import { usePathname } from "next/navigation";
 import {
   type ComponentPropsWithoutRef,
   type ReactNode,
@@ -32,20 +31,15 @@ export function MotionPage({
   children: ReactNode;
   className?: string;
 }) {
-  const pathname = usePathname();
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={pathname}
-        variants={pageTransition}
-        initial="hidden"
-        animate="show"
-        exit="exit"
-        className={className}
-      >
-        {children}
-      </motion.div>
-    </AnimatePresence>
+    <motion.div
+      variants={pageTransition}
+      initial="hidden"
+      animate="show"
+      className={className}
+    >
+      {children}
+    </motion.div>
   );
 }
 
@@ -223,4 +217,4 @@ export function CountUp({
   );
 }
 
-export { motion, AnimatePresence, springSoft };
+export { AnimatePresence, motion, springSoft };

@@ -4,15 +4,17 @@ import { BrandMark } from "@/components/ui/brand-mark";
 import { CommandMenu, type CommandItem } from "@/components/ui/command-menu";
 import { MotionPage } from "@/components/ui/motion-primitives";
 import type { UserRole } from "@/lib/permissions";
+import { listWorkspaceSummaries } from "@/lib/workspace-context/server";
 
+import { AppShellNav } from "./app-shell-nav";
 import { Breadcrumbs } from "./breadcrumbs";
 import { MobileDock } from "./mobile-dock";
 import {
-  getAllNavigationItems,
-  getNavigationSections,
+  getAllPlatformItems,
+  getPlatformNavigationSections,
 } from "./navigation";
-import { SidebarNav } from "./sidebar-nav";
 import { UserMenu } from "./user-menu";
+import { WorkspaceSwitcher } from "./workspace-switcher";
 
 interface AppShellProps {
   children: ReactNode;
@@ -24,15 +26,24 @@ interface AppShellProps {
   };
 }
 
-export function AppShell({ children, user }: AppShellProps) {
-  const sections = getNavigationSections(user.role);
-  const allItems = getAllNavigationItems(user.role);
-  const commandItems: CommandItem[] = allItems.map((it) => ({
+export async function AppShell({ children, user }: AppShellProps) {
+  const platformSections = getPlatformNavigationSections(user.role);
+  const platformItems = getAllPlatformItems(user.role);
+
+  const workspaces = await listWorkspaceSummaries();
+  const switcherWorkspaces = workspaces.map((ws) => ({
+    id: ws.id,
+    slug: ws.slug,
+    name: ws.name,
+    description: ws.description,
+  }));
+
+  const commandItems: CommandItem[] = platformItems.map((it) => ({
     id: it.href,
     label: it.label,
     hint: it.summary,
     href: it.href,
-    group: it.icon === "settings" || it.icon === "users" ? "治理" : "工作台",
+    group: "平台",
   }));
 
   return (
@@ -50,7 +61,13 @@ export function AppShell({ children, user }: AppShellProps) {
             </div>
 
             <div className="mt-6 flex-1 overflow-y-auto pr-1">
-              <SidebarNav sections={sections} />
+              <AppShellNav
+                platformSections={platformSections}
+                userRole={user.role}
+                workspaceLabelMap={Object.fromEntries(
+                  workspaces.map((w) => [w.slug, w.name]),
+                )}
+              />
             </div>
 
             <div className="glass-panel mt-4 rounded-2xl p-3">
@@ -76,9 +93,10 @@ export function AppShell({ children, user }: AppShellProps) {
                 <BrandMark compact />
               </div>
               <div className="hidden min-w-0 flex-1 lg:block">
-                <Breadcrumbs />
+                <Breadcrumbs workspaceLabelMap={Object.fromEntries(workspaces.map((w) => [w.slug, w.name]))} />
               </div>
-              <div className="ml-auto flex items-center gap-3">
+              <div className="ml-auto flex items-center gap-2 sm:gap-3">
+                <WorkspaceSwitcher workspaces={switcherWorkspaces} />
                 <CommandMenu items={commandItems} />
                 <UserMenu user={user} />
               </div>
@@ -96,7 +114,7 @@ export function AppShell({ children, user }: AppShellProps) {
         </div>
       </div>
 
-      <MobileDock items={allItems} />
+      <MobileDock platformItems={platformItems} userRole={user.role} />
     </div>
   );
 }

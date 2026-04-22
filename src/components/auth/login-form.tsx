@@ -13,13 +13,21 @@ interface LoginFormState {
   message?: string;
   values: {
     identifier: string;
+    password: string;
   };
 }
 
 const INITIAL_STATE: LoginFormState = {
   fieldErrors: {},
-  values: { identifier: "" },
+  values: { identifier: "", password: "" },
 };
+
+const DEMO_PASSWORD = "Console#2026";
+const DEMO_ACCOUNTS = [
+  { role: "admin@local", label: "管理员", caption: "治理", tone: "amber" as const },
+  { role: "maintainer@local", label: "维护者", caption: "执行", tone: "cyan" as const },
+  { role: "viewer@local", label: "观察者", caption: "观察", tone: "purple" as const },
+];
 
 interface LoginFormProps {
   nextPath: string;
@@ -31,6 +39,15 @@ export function LoginForm({ nextPath, notice }: LoginFormProps) {
   const [state, setState] = useState<LoginFormState>(INITIAL_STATE);
   const [isPending, setIsPending] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  function fillDemoAccount(role: string) {
+    setState((prev) => ({
+      ...prev,
+      fieldErrors: {},
+      message: undefined,
+      values: { identifier: role, password: DEMO_PASSWORD },
+    }));
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -46,7 +63,7 @@ export function LoginForm({ nextPath, notice }: LoginFormProps) {
       setState({
         fieldErrors,
         message: "请先补全登录信息",
-        values: { identifier },
+        values: { identifier, password },
       });
       return;
     }
@@ -63,7 +80,7 @@ export function LoginForm({ nextPath, notice }: LoginFormProps) {
         setState({
           fieldErrors: { password: "账号或密码错误" },
           message: "认证失败，请检查账号、用户名和密码是否匹配",
-          values: { identifier },
+          values: { identifier, password },
         });
         return;
       }
@@ -74,7 +91,7 @@ export function LoginForm({ nextPath, notice }: LoginFormProps) {
       setState({
         fieldErrors: {},
         message: "登录请求失败，请稍后再试。",
-        values: { identifier },
+        values: { identifier, password },
       });
     } finally {
       setIsPending(false);
@@ -123,11 +140,17 @@ export function LoginForm({ nextPath, notice }: LoginFormProps) {
               autoCapitalize="none"
               autoComplete="username"
               className="pl-11"
-              defaultValue={state.values.identifier}
               id="identifier"
               name="identifier"
-              placeholder="例如：admin@local 或 admin"
+              onChange={(event) =>
+                setState((prev) => ({
+                  ...prev,
+                  values: { ...prev.values, identifier: event.target.value },
+                }))
+              }
+              placeholder="例如：admin@local"
               required
+              value={state.values.identifier}
             />
           </div>
           {state.fieldErrors.identifier ? (
@@ -150,9 +173,16 @@ export function LoginForm({ nextPath, notice }: LoginFormProps) {
               className="pl-11 pr-12"
               id="password"
               name="password"
+              onChange={(event) =>
+                setState((prev) => ({
+                  ...prev,
+                  values: { ...prev.values, password: event.target.value },
+                }))
+              }
               placeholder="输入本地账号密码"
               required
               type={showPassword ? "text" : "password"}
+              value={state.values.password}
             />
             <button
               className="absolute right-3 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/[0.08] hover:text-white"
@@ -200,10 +230,21 @@ export function LoginForm({ nextPath, notice }: LoginFormProps) {
         </Button>
       </form>
 
-      <div className="mt-6 grid gap-2 sm:grid-cols-3">
-        <RolePill label="管理员" caption="治理" tone="amber" />
-        <RolePill label="维护者" caption="执行" tone="cyan" />
-        <RolePill label="观察者" caption="观察" tone="purple" />
+      <div className="mt-6 space-y-2">
+        <p className="text-[11px] uppercase tracking-[0.22em] text-slate-500">
+          一键填充演示账号
+        </p>
+        <div className="grid gap-2 sm:grid-cols-3">
+          {DEMO_ACCOUNTS.map((account) => (
+            <RolePill
+              key={account.role}
+              caption={account.caption}
+              label={account.label}
+              onSelect={() => fillDemoAccount(account.role)}
+              tone={account.tone}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -213,22 +254,28 @@ function RolePill({
   label,
   caption,
   tone,
+  onSelect,
 }: {
   label: string;
   caption: string;
   tone: "amber" | "cyan" | "purple";
+  onSelect: () => void;
 }) {
   const color = {
-    amber: "border-amber-400/25 bg-amber-400/10 text-amber-200",
-    cyan: "border-cyan-400/25 bg-cyan-400/10 text-cyan-200",
-    purple: "border-purple-400/25 bg-purple-400/10 text-purple-200",
+    amber: "border-amber-400/25 bg-amber-400/10 text-amber-200 hover:bg-amber-400/20",
+    cyan: "border-cyan-400/25 bg-cyan-400/10 text-cyan-200 hover:bg-cyan-400/20",
+    purple: "border-purple-400/25 bg-purple-400/10 text-purple-200 hover:bg-purple-400/20",
   }[tone];
   return (
-    <div className={`rounded-2xl border px-4 py-3 ${color}`}>
+    <button
+      className={`w-full rounded-2xl border px-4 py-3 text-left transition ${color}`}
+      onClick={onSelect}
+      type="button"
+    >
       <p className="font-mono text-[10px] uppercase tracking-[0.26em] opacity-80">
         {label}
       </p>
       <p className="mt-1 text-sm font-semibold">{caption}</p>
-    </div>
+    </button>
   );
 }

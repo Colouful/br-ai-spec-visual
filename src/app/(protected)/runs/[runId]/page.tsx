@@ -1,28 +1,20 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
-import { ConsolePage } from "@/components/dashboard/console-page";
-import { RealtimeWorkspaceBridge } from "@/components/realtime/realtime-workspace-bridge";
-import { RunDetail } from "@/components/runs/run-detail";
+import { prisma } from "@/lib/db/prisma";
 import { getRunDetailVm } from "@/lib/view-models/runs";
 
-export default async function RunDetailPage({
+export default async function RunDetailRedirectPage({
   params,
 }: {
   params: Promise<{ runId: string }>;
 }) {
   const { runId } = await params;
   const viewModel = await getRunDetailVm(runId);
-
-  if (!viewModel) {
-    notFound();
-  }
-
-  return (
-    <ConsolePage
-      hero={viewModel.hero}
-      actions={<RealtimeWorkspaceBridge label="运行订阅" workspaceIds={[viewModel.run.workspaceId]} />}
-    >
-      <RunDetail viewModel={viewModel} />
-    </ConsolePage>
-  );
+  if (!viewModel) notFound();
+  const ws = await prisma.workspace.findUnique({
+    where: { id: viewModel.run.workspaceId },
+    select: { slug: true },
+  });
+  const slug = ws?.slug ?? viewModel.run.workspaceId;
+  redirect(`/w/${encodeURIComponent(slug)}/runs/${encodeURIComponent(runId)}`);
 }

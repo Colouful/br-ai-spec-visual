@@ -11,7 +11,8 @@ export type NavigationIcon =
   | "folders"
   | "git-branch"
   | "network"
-  | "bar-chart";
+  | "bar-chart"
+  | "workflow";
 
 export interface NavigationItem {
   href: string;
@@ -27,98 +28,182 @@ export interface NavigationSection {
   items: NavigationItem[];
 }
 
-const NAVIGATION_SECTIONS: NavigationSection[] = [
+const PLATFORM_SECTIONS: NavigationSection[] = [
   {
-    id: "workbench",
+    id: "platform-home",
     label: "工作台",
     items: [
-      {
-        href: "/overview",
-        icon: "layout-dashboard",
-        label: "总览",
-        requiredRole: "viewer",
-        summary: "全工作区健康卡 + 活跃运行心跳 + 归档时间线",
-      },
       {
         href: "/workspaces",
         icon: "folders",
         label: "工作区",
         requiredRole: "viewer",
-        summary: "多项目纳管与连接配置",
-      },
-      {
-        href: "/specs",
-        icon: "file-stack",
-        label: "规范资产",
-        requiredRole: "viewer",
-        summary: "管理提案、规范与交付上下文",
-      },
-      {
-        href: "/tasks",
-        icon: "list-todo",
-        label: "执行看板",
-        requiredRole: "maintainer",
-        summary: "跟踪任务编排、状态和回归范围",
-      },
-      {
-        href: "/runs",
-        icon: "activity",
-        label: "运行记录",
-        requiredRole: "maintainer",
-        summary: "审阅自动化执行与异常历史",
-      },
-      {
-        href: "/changes",
-        icon: "git-branch",
-        label: "变更流水",
-        requiredRole: "maintainer",
-        summary: "跟踪变更文档与状态流转",
-      },
-      {
-        href: "/topology",
-        icon: "network",
-        label: "拓扑图谱",
-        requiredRole: "viewer",
-        summary: "仓库与规范资产关系可视化",
+        summary: "选择项目并查看跨工作区健康",
       },
     ],
   },
   {
-    id: "governance",
-    label: "治理",
+    id: "platform-governance",
+    label: "平台治理",
     items: [
       {
-        href: "/members",
-        icon: "users",
-        label: "成员管理",
-        requiredRole: "admin",
-        summary: "分配角色、维护账号策略",
-      },
-      {
-        href: "/admin/installations",
+        href: "/platform/installations",
         icon: "bar-chart",
         label: "用户安装使用",
         requiredRole: "admin",
         summary: "CLI 安装用户、命令使用与趋势",
       },
       {
-        href: "/settings",
+        href: "/platform/members",
+        icon: "users",
+        label: "全局成员",
+        requiredRole: "admin",
+        summary: "维护账号、角色与权限策略",
+      },
+      {
+        href: "/platform/settings",
         icon: "settings",
         label: "系统设置",
         requiredRole: "admin",
-        summary: "配置认证策略与默认权限",
+        summary: "默认权限、连接策略与全局配置",
       },
     ],
   },
 ];
 
-export function getNavigationSections(role: UserRole) {
-  return NAVIGATION_SECTIONS.map((section) => ({
-    ...section,
-    items: section.items.filter((item) => hasPermission(role, item.requiredRole)),
-  })).filter((section) => section.items.length > 0);
+interface WorkspaceItemTemplate {
+  segment: string;
+  icon: NavigationIcon;
+  label: string;
+  requiredRole: UserRole;
+  summary: string;
 }
 
-export function getAllNavigationItems(role: UserRole): NavigationItem[] {
-  return getNavigationSections(role).flatMap((s) => s.items);
+const WORKSPACE_TEMPLATE: NavigationSection[] = [
+  {
+    id: "workspace-flow",
+    label: "项目主线",
+    items: (
+      [
+        {
+          segment: "pipeline",
+          icon: "workflow",
+          label: "Pipeline",
+          requiredRole: "viewer",
+          summary: "Spec → Plan → Run → Review → Archive 五阶段主视图",
+        },
+      ] satisfies WorkspaceItemTemplate[]
+    ).map((tpl) => buildPlaceholderItem(tpl)),
+  },
+  {
+    id: "workspace-artifacts",
+    label: "产物",
+    items: (
+      [
+        {
+          segment: "specs",
+          icon: "file-stack",
+          label: "规范",
+          requiredRole: "viewer",
+          summary: "提案、设计与规范文档列表",
+        },
+        {
+          segment: "runs",
+          icon: "activity",
+          label: "运行",
+          requiredRole: "maintainer",
+          summary: "本工作区的执行历史",
+        },
+        {
+          segment: "changes",
+          icon: "git-branch",
+          label: "变更",
+          requiredRole: "maintainer",
+          summary: "变更看板与状态流转",
+        },
+        {
+          segment: "topology",
+          icon: "network",
+          label: "拓扑",
+          requiredRole: "viewer",
+          summary: "角色 / 资产 / 关系图谱",
+        },
+      ] satisfies WorkspaceItemTemplate[]
+    ).map((tpl) => buildPlaceholderItem(tpl)),
+  },
+  {
+    id: "workspace-governance",
+    label: "工作区治理",
+    items: (
+      [
+        {
+          segment: "members",
+          icon: "users",
+          label: "成员",
+          requiredRole: "viewer",
+          summary: "工作区内成员与角色",
+        },
+        {
+          segment: "settings",
+          icon: "settings",
+          label: "设置",
+          requiredRole: "admin",
+          summary: "工作区级配置",
+        },
+      ] satisfies WorkspaceItemTemplate[]
+    ).map((tpl) => buildPlaceholderItem(tpl)),
+  },
+];
+
+function buildPlaceholderItem(tpl: WorkspaceItemTemplate): NavigationItem {
+  return {
+    href: `__WORKSPACE__/${tpl.segment}`,
+    icon: tpl.icon,
+    label: tpl.label,
+    requiredRole: tpl.requiredRole,
+    summary: tpl.summary,
+  };
+}
+
+function materializeWorkspaceSections(slug: string): NavigationSection[] {
+  return WORKSPACE_TEMPLATE.map((section) => ({
+    ...section,
+    items: section.items.map((item) => ({
+      ...item,
+      href: item.href.replace("__WORKSPACE__", `/w/${encodeURIComponent(slug)}`),
+    })),
+  }));
+}
+
+function filterByRole(
+  sections: NavigationSection[],
+  role: UserRole,
+): NavigationSection[] {
+  return sections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => hasPermission(role, item.requiredRole)),
+    }))
+    .filter((section) => section.items.length > 0);
+}
+
+export function getPlatformNavigationSections(role: UserRole) {
+  return filterByRole(PLATFORM_SECTIONS, role);
+}
+
+export function getWorkspaceNavigationSections(role: UserRole, slug: string) {
+  return filterByRole(materializeWorkspaceSections(slug), role);
+}
+
+export function getAllPlatformItems(role: UserRole): NavigationItem[] {
+  return getPlatformNavigationSections(role).flatMap((section) => section.items);
+}
+
+export function getAllWorkspaceItems(
+  role: UserRole,
+  slug: string,
+): NavigationItem[] {
+  return getWorkspaceNavigationSections(role, slug).flatMap(
+    (section) => section.items,
+  );
 }

@@ -14,6 +14,10 @@ import { projectRuntimeStateRawEvent } from "@/lib/projectors/runtime-state-proj
  *
  * 复用 runtime-state-projector 的核心逻辑（payload 结构与 .ai-spec/current-run.json
  * 一致），并补充 `run.started` 的最小骨架。
+ *
+ * **终态（源头约定）**：每次 run 在协议结束、进程正常/异常退出时，auto 仍应推
+ * `run.state_changed`（完成/取消等）或 `run.archived`，避免 RunState 长期停留在
+ * `running` + `run.started`（Visual Pipeline 会依赖读侧「陈旧」策略做隐藏，不替代本推送）。
  */
 export function projectHookEventRawEvent(
   rawEvent: RawIngestEventDraft | StoredRawIngestEvent,

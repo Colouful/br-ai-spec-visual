@@ -1,13 +1,9 @@
-import { ConsolePage } from "@/components/dashboard/console-page";
-import { RunsRealtimeSection } from "@/components/runs/runs-realtime-section";
-import { getRunsPageVm } from "@/lib/view-models/runs";
+import { redirect } from "next/navigation";
 
-export default async function RunsPage() {
-  const viewModel = await getRunsPageVm();
+import { resolveDefaultWorkspaceSlug } from "@/lib/workspace-context/server";
 
-  return (
-    <ConsolePage hero={viewModel.hero}>
-      <RunsRealtimeSection initialViewModel={viewModel} />
-    </ConsolePage>
-  );
+export default async function RunsRedirectPage() {
+  const slug = await resolveDefaultWorkspaceSlug();
+  if (slug) redirect(`/w/${encodeURIComponent(slug)}/runs`);
+  redirect("/workspaces");
 }

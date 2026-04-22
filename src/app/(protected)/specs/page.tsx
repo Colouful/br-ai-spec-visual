@@ -1,17 +1,9 @@
-import { ConsolePage } from "@/components/dashboard/console-page";
-import { RealtimeWorkspaceBridge } from "@/components/realtime/realtime-workspace-bridge";
-import { SpecsManagement } from "@/components/specs/specs-management";
-import { getSpecsPageVm } from "@/lib/view-models/specs";
+import { redirect } from "next/navigation";
 
-export default async function SpecsPage() {
-  const viewModel = await getSpecsPageVm();
+import { resolveDefaultWorkspaceSlug } from "@/lib/workspace-context/server";
 
-  return (
-    <ConsolePage
-      hero={viewModel.hero}
-      actions={<RealtimeWorkspaceBridge label="规范订阅" workspaceIds={Array.from(new Set(viewModel.rows.map((row) => row.workspaceId)))} />}
-    >
-      <SpecsManagement viewModel={viewModel} />
-    </ConsolePage>
-  );
+export default async function SpecsRedirectPage() {
+  const slug = await resolveDefaultWorkspaceSlug();
+  if (slug) redirect(`/w/${encodeURIComponent(slug)}/specs`);
+  redirect("/workspaces");
 }

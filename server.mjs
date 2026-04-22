@@ -1,7 +1,15 @@
 import { createServer } from 'node:http';
 
+import dotenv from 'dotenv';
 import next from 'next';
 import { tsImport } from 'tsx/esm/api';
+
+// 让 `pnpm dev` / `pnpm start` 直接拉起 server.mjs 时也能读到 .env 中的 PORT、
+// DATABASE_URL 等。优先级约定：
+//   shell 已导出的变量 > .env.local > .env
+// 因此先读 .env.local（override:false 表示不覆盖已设值），再读 .env 做兜底。
+dotenv.config({ path: '.env.local', override: false, quiet: true });
+dotenv.config({ path: '.env', override: false, quiet: true });
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = process.env.HOSTNAME ?? '0.0.0.0';
