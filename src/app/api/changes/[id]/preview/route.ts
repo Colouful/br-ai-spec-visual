@@ -32,15 +32,51 @@ export async function GET(
     const decodedId = decodeId(id);
     const normalizedId = decodedId.replace(/:/g, "__");
 
-    const doc = await prisma.changeDocument.findFirst({
-      where: {
-        OR: [
-          { id: decodedId },
-          { id: normalizedId },
-        ],
-      },
+    // 前端列表里的 id 是 read-model 拼接的虚拟 id：`${changeKey}__${docType}`
+    // （详见 src/lib/services/read-model.ts）。所以这里要拆开来按 (changeKey, docType)
+    // 查真实的 ChangeDocument，不能只按 id 查 cuid。
+    // 同时兼容两种历史来源：真实 cuid、以及 changeKey 含 ":" 被替换为 "__" 的形式。
+    let doc = await prisma.changeDocument.findFirst({
+      where: { OR: [{ id: decodedId }, { id: normalizedId }] },
       include: { workspace: true },
     });
+
+    if (!doc) {
+      // 解析虚拟 id：从右侧分离出 docType，剩余部分作为 changeKey。
+      // changeKey 本身可能包含 "__"（由原始 ":" 替换而来），因此用 lastIndexOf。
+      const parseVirtualId = (raw: string): { changeKey: string; docType: string } | null => {
+        const idx = raw.lastIndexOf("__");
+        if (idx <= 0 || idx >= raw.length - 2) return null;
+        return { changeKey: raw.slice(0, idx), docType: raw.slice(idx + 2) };
+      };
+
+      const variants = new Set<string>([decodedId, normalizedId]);
+      for (const v of variants) {
+        const parsed = parseVirtualId(v);
+        if (!parsed) continue;
+        doc = await prisma.changeDocument.findFirst({
+          where: { changeKey: parsed.changeKey, docType: parsed.docType },
+          include: { workspace: true },
+          orderBy: { updatedAt: "desc" },
+        });
+        if (doc) break;
+      }
+
+      // 兜底：把整串当作 changeKey 再试一次（老数据或非标准调用方）。
+      if (!doc) {
+        const DOC_TYPE_PRIORITY = ["proposal", "tasks", "design", "spec"];
+        const candidates = await prisma.changeDocument.findMany({
+          where: { changeKey: { in: Array.from(variants) } },
+          include: { workspace: true },
+        });
+        if (candidates.length > 0) {
+          doc =
+            DOC_TYPE_PRIORITY.map((t) => candidates.find((c) => c.docType === t)).find(
+              (c): c is (typeof candidates)[number] => Boolean(c),
+            ) ?? candidates[0];
+        }
+      }
+    }
 
     if (!doc) {
       throw new HttpError(404, "未找到该变更文档");

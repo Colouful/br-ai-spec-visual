@@ -145,9 +145,22 @@ export async function getChangeDetailVm(
 ): Promise<ChangeDetailVm | null> {
   const realChanges = await listChangeReadModels();
   const normalizedId = changeId.replace(/:/g, "__");
-  const current = realChanges.find(
-    (change) => change.id === changeId || change.id === normalizedId,
-  );
+  const DOC_TYPE_PRIORITY = ["proposal", "tasks", "design", "spec"];
+  const pickByChangeKey = (key: string) => {
+    const candidates = realChanges.filter((change) => change.changeKey === key);
+    if (candidates.length === 0) return undefined;
+    for (const docType of DOC_TYPE_PRIORITY) {
+      const hit = candidates.find((change) => change.docType === docType);
+      if (hit) return hit;
+    }
+    return candidates[0];
+  };
+  const current =
+    realChanges.find(
+      (change) => change.id === changeId || change.id === normalizedId,
+    ) ??
+    pickByChangeKey(changeId) ??
+    pickByChangeKey(normalizedId);
   if (current) {
     const docTypeZh = zh(current.docType, "doc");
     const statusZh = zh(current.status, "status");
