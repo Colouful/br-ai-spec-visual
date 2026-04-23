@@ -29,19 +29,19 @@ export function UserMenu({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="group inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] py-1.5 pl-1.5 pr-3 backdrop-blur transition hover:border-white/20"
+        className="group inline-flex items-center gap-2 rounded-full border border-[var(--shell-border)] bg-[var(--shell-control-bg)] py-1.5 pl-1.5 pr-3 backdrop-blur transition hover:border-[var(--shell-border-strong)]"
       >
         <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-purple-500 text-[10px] font-semibold text-slate-900">
           {formatInitials(user.name) || "··"}
         </span>
         <span className="hidden text-left sm:block">
-          <span className="block text-xs font-medium text-white">{user.name}</span>
-          <span className="block text-[10px] text-slate-400">
+          <span className="block text-xs font-medium text-[var(--shell-fg)]">{user.name}</span>
+          <span className="block text-[10px] text-[var(--shell-muted)]">
             {getRoleLabel(user.role)}
           </span>
         </span>
         <ChevronDown
-          className={`h-3.5 w-3.5 text-slate-400 transition ${open ? "rotate-180" : ""}`}
+          className={`h-3.5 w-3.5 text-[var(--shell-muted)] transition ${open ? "rotate-180" : ""}`}
         />
       </button>
 
@@ -52,24 +52,24 @@ export function UserMenu({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            className="absolute right-0 top-[calc(100%+8px)] z-50 w-64 overflow-hidden rounded-2xl border border-white/12 bg-[#0a0f1a]/95 p-2 shadow-[0_24px_60px_rgba(0,0,0,0.5)] backdrop-blur-xl"
+            className="absolute right-0 top-[calc(100%+8px)] z-50 w-64 overflow-hidden rounded-2xl border border-[var(--shell-border)] bg-[var(--shell-dropdown-bg)] p-2 shadow-[var(--shell-dropdown-shadow)] backdrop-blur-xl"
           >
-            <div className="flex items-center gap-3 rounded-xl bg-white/[0.04] p-3">
+            <div className="flex items-center gap-3 rounded-xl bg-[var(--shell-control-bg)] p-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 to-purple-500 text-sm font-semibold text-slate-900">
                 {formatInitials(user.name) || "··"}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-white">
+                <p className="truncate text-sm font-semibold text-[var(--shell-fg)]">
                   {user.name}
                 </p>
-                <p className="truncate text-xs text-slate-400">{user.email}</p>
+                <p className="truncate text-xs text-[var(--shell-muted)]">{user.email}</p>
               </div>
             </div>
 
-            <div className="mt-2 flex items-center gap-2 rounded-xl bg-white/[0.02] px-3 py-2 text-xs text-slate-400">
+            <div className="mt-2 flex items-center gap-2 rounded-xl bg-[var(--shell-control-bg)] px-3 py-2 text-xs text-[var(--shell-muted)]">
               <Shield className="h-3.5 w-3.5 text-cyan-300" />
               <span>当前角色</span>
-              <span className="ml-auto rounded-full border border-white/10 bg-white/[0.06] px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-slate-200">
+              <span className="ml-auto rounded-full border border-[var(--shell-border)] bg-[var(--shell-control-bg-hover)] px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-[var(--shell-fg)]">
                 {getRoleLabel(user.role)}
               </span>
             </div>
@@ -77,7 +77,7 @@ export function UserMenu({
             <form action={logoutAction} className="mt-2">
               <button
                 type="submit"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-medium text-slate-200 transition hover:border-rose-400/40 hover:bg-rose-400/10 hover:text-rose-200"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--shell-border)] bg-[var(--shell-control-bg)] px-3 py-2 text-xs font-medium text-[var(--shell-fg)] transition hover:border-rose-400/40 hover:bg-rose-400/10 hover:text-rose-500"
               >
                 <LogOut className="h-3.5 w-3.5" />
                 退出登录

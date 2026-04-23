@@ -74,11 +74,11 @@ export function CommandMenu({ items }: { items: CommandItem[] }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="group inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-slate-300 backdrop-blur transition hover:border-white/20 hover:text-white"
+        className="group inline-flex items-center gap-2 rounded-full border border-[var(--shell-border)] bg-[var(--shell-control-bg)] px-3 py-1.5 text-xs text-[var(--shell-muted)] backdrop-blur transition hover:border-[var(--shell-border-strong)] hover:text-[var(--shell-fg)]"
       >
         <Search className="h-3.5 w-3.5" />
         <span className="hidden sm:inline">快速跳转</span>
-        <kbd className="hidden rounded border border-white/10 bg-white/[0.06] px-1.5 py-0.5 font-mono text-[10px] text-slate-400 sm:inline">
+        <kbd className="hidden rounded border border-[var(--shell-border)] bg-[var(--shell-control-bg-hover)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--shell-muted)] sm:inline">
           ⌘K
         </kbd>
       </button>
@@ -94,7 +94,7 @@ export function CommandMenu({ items }: { items: CommandItem[] }) {
             className="fixed inset-0 z-[80] flex items-start justify-center pt-[12vh]"
           >
             <div
-              className="absolute inset-0 bg-[#05070d]/70 backdrop-blur-md"
+              className="absolute inset-0 bg-[var(--shell-overlay-bg)] backdrop-blur-md"
               onClick={() => setOpen(false)}
             />
             <motion.div
@@ -102,25 +102,25 @@ export function CommandMenu({ items }: { items: CommandItem[] }) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.98 }}
               transition={{ type: "spring", stiffness: 380, damping: 30 }}
-              className="relative w-[min(620px,92vw)] overflow-hidden rounded-2xl border border-white/12 bg-[#0a0f1a]/95 shadow-[0_40px_120px_rgba(0,0,0,0.6)] backdrop-blur-xl"
+              className="relative w-[min(620px,92vw)] overflow-hidden rounded-2xl border border-[var(--shell-border)] bg-[var(--shell-dropdown-bg)] shadow-[var(--shell-dropdown-shadow)] backdrop-blur-xl"
             >
-              <div className="flex items-center gap-3 border-b border-white/8 px-4">
-                <Search className="h-4 w-4 text-slate-400" />
+              <div className="flex items-center gap-3 border-b border-[var(--shell-border)] px-4">
+                <Search className="h-4 w-4 text-[var(--shell-muted)]" />
                 <input
                   autoFocus
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={onKeyDown}
                   placeholder="跳转页面、搜索工作台…"
-                  className="h-12 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-500"
+                  className="h-12 flex-1 bg-transparent text-sm text-[var(--shell-fg)] outline-none placeholder:text-[var(--shell-muted)]"
                 />
-                <kbd className="hidden rounded border border-white/10 bg-white/[0.06] px-1.5 py-0.5 font-mono text-[10px] text-slate-400 sm:inline">
+                <kbd className="hidden rounded border border-[var(--shell-border)] bg-[var(--shell-control-bg-hover)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--shell-muted)] sm:inline">
                   ESC
                 </kbd>
               </div>
               <div className="max-h-[56vh] overflow-y-auto p-2">
                 {filtered.length === 0 ? (
-                  <p className="px-3 py-8 text-center text-sm text-slate-500">
+                  <p className="px-3 py-8 text-center text-sm text-[var(--shell-muted)]">
                     未找到匹配项
                   </p>
                 ) : (
@@ -134,25 +134,25 @@ export function CommandMenu({ items }: { items: CommandItem[] }) {
                           className={cn(
                             "flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left transition",
                             idx === active
-                              ? "bg-white/[0.08] text-white"
-                              : "text-slate-300 hover:bg-white/[0.05]",
+                              ? "bg-[var(--shell-selected-bg)] text-[var(--shell-fg)]"
+                              : "text-[var(--shell-muted)] hover:bg-[var(--shell-control-bg-hover)]",
                           )}
                         >
                           <div className="flex flex-col">
                             <span className="text-sm font-medium">{it.label}</span>
                             {it.hint ? (
-                              <span className="text-xs text-slate-500">
+                              <span className="text-xs text-[var(--shell-muted)]">
                                 {it.hint}
                               </span>
                             ) : null}
                           </div>
                           <div className="flex items-center gap-2">
                             {it.group ? (
-                              <span className="rounded-full border border-white/8 bg-white/[0.04] px-2 py-0.5 font-mono text-[10px] uppercase tracking-widest text-slate-400">
+                              <span className="rounded-full border border-[var(--shell-border)] bg-[var(--shell-control-bg)] px-2 py-0.5 font-mono text-[10px] uppercase tracking-widest text-[var(--shell-muted)]">
                                 {it.group}
                               </span>
                             ) : null}
-                            <ArrowRight className="h-3.5 w-3.5 text-slate-500" />
+                            <ArrowRight className="h-3.5 w-3.5 text-[var(--shell-muted)]" />
                           </div>
                         </button>
                       </li>

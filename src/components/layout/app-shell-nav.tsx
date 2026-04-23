@@ -51,7 +51,7 @@ export function AppShellNav({
     return (
       <div className="space-y-8">
         <SidebarNav sections={labeled} />
-        <div className="border-t border-white/5 pt-6">
+        <div className="border-t border-[var(--shell-border)] pt-6">
           <SidebarNav sections={platformSections} />
         </div>
       </div>

@@ -4,7 +4,7 @@ import type { ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "relative inline-flex items-center justify-center gap-2 rounded-full font-medium transition duration-200 outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070d] disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97]",
+  "relative inline-flex items-center justify-center gap-2 rounded-full font-medium transition duration-200 outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97]",
   {
     defaultVariants: {
       size: "default",
@@ -23,11 +23,11 @@ const buttonVariants = cva(
         aurora:
           "text-white bg-[linear-gradient(135deg,#22d3ee_0%,#6366f1_55%,#a855f7_100%)] bg-[length:200%_200%] animate-aurora-shift shadow-[0_12px_28px_-14px_rgba(99,102,241,0.6)] hover:shadow-[0_18px_44px_-14px_rgba(34,211,238,0.6)]",
         secondary:
-          "bg-white/[0.06] text-slate-100 ring-1 ring-inset ring-white/12 backdrop-blur-md hover:bg-white/[0.1] hover:ring-white/20",
+          "bg-[var(--shell-control-bg)] text-[var(--shell-control-fg)] ring-1 ring-inset ring-[var(--shell-border)] backdrop-blur-md hover:bg-[var(--shell-control-bg-hover)] hover:ring-[var(--shell-border-strong)]",
         ghost:
-          "bg-transparent text-slate-300 ring-1 ring-inset ring-white/10 hover:bg-white/[0.05] hover:text-white",
+          "bg-transparent text-[var(--shell-muted)] ring-1 ring-inset ring-[var(--shell-border)] hover:bg-[var(--shell-control-bg-hover)] hover:text-[var(--shell-fg)]",
         outline:
-          "bg-transparent text-slate-200 ring-1 ring-inset ring-white/15 hover:bg-white/[0.06] hover:text-white",
+          "bg-transparent text-[var(--shell-fg)] ring-1 ring-inset ring-[var(--shell-border)] hover:bg-[var(--shell-control-bg-hover)] hover:text-[var(--shell-fg)]",
         danger:
           "bg-rose-500/90 text-white shadow-[0_12px_28px_-14px_rgba(244,63,94,0.55)] hover:bg-rose-500",
       },

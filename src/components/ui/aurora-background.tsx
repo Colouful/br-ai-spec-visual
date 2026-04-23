@@ -43,7 +43,8 @@ export function AuroraBackground() {
           left: "-8%",
           width: "520px",
           height: "520px",
-          background: "radial-gradient(circle, rgba(34,211,238,0.55), transparent 60%)",
+          background:
+            "radial-gradient(circle, rgba(var(--aurora-rgb-from), 0.55), transparent 60%)",
         }}
       />
       <div
@@ -53,7 +54,8 @@ export function AuroraBackground() {
           right: "-10%",
           width: "560px",
           height: "560px",
-          background: "radial-gradient(circle, rgba(168,85,247,0.45), transparent 60%)",
+          background:
+            "radial-gradient(circle, rgba(var(--aurora-rgb-via), 0.45), transparent 60%)",
           animationDelay: "-6s",
         }}
       />
@@ -64,7 +66,8 @@ export function AuroraBackground() {
           left: "30%",
           width: "640px",
           height: "640px",
-          background: "radial-gradient(circle, rgba(99,102,241,0.42), transparent 60%)",
+          background:
+            "radial-gradient(circle, rgba(var(--aurora-rgb-to), 0.42), transparent 60%)",
           animationDelay: "-12s",
         }}
       />
@@ -78,7 +81,7 @@ export function AuroraBackground() {
           height: "600px",
           borderRadius: "9999px",
           background:
-            "radial-gradient(circle, rgba(34,211,238,0.10), transparent 60%)",
+            "radial-gradient(circle, rgba(var(--spot-rgb), 0.10), transparent 60%)",
           willChange: "transform",
         }}
       />

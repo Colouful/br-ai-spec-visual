@@ -19,6 +19,7 @@ import {
   getAllPlatformItems,
   getPlatformNavigationSections,
 } from "./navigation";
+import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
 import { WorkspaceSwitcher } from "./workspace-switcher";
 
@@ -61,16 +62,16 @@ export async function AppShell({ children, user }: AppShellProps) {
   });
 
   return (
-    <div className="relative min-h-screen text-slate-100">
+    <div className="relative min-h-screen text-[var(--shell-fg)]">
       <div className="mx-auto flex min-h-screen flex-col lg:flex-row">
         {/* Sidebar (desktop) */}
         <AppShellSidebarSlot>
-          <aside className="hidden lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-[280px] lg:shrink-0 lg:flex-col lg:border-r lg:border-white/8 lg:bg-[#070b14]/60 lg:backdrop-blur-xl">
+          <aside className="hidden lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-[280px] lg:shrink-0 lg:flex-col lg:border-r lg:border-[var(--shell-border)] lg:bg-[var(--shell-sidebar-bg)] lg:backdrop-blur-xl">
             <div className="flex h-full flex-col p-5">
               <div className="glass-panel relative overflow-hidden rounded-2xl p-4">
                 <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
                 <BrandMark />
-                <p className="mt-4 text-xs leading-6 text-slate-400">
+                <p className="mt-4 text-xs leading-6 text-[var(--shell-muted)]">
                   规范驱动 AI 研发的可视化与控制面板，多项目运行态一屏尽览。
                 </p>
               </div>
@@ -86,14 +87,14 @@ export async function AppShell({ children, user }: AppShellProps) {
               </div>
 
               <div className="glass-panel mt-4 rounded-2xl p-3">
-                <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-slate-400">
+                <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-[var(--shell-muted)]">
                   <span className="relative flex h-1.5 w-1.5">
                     <span className="absolute inset-0 animate-ping rounded-full bg-lime-400/70" />
                     <span className="relative h-1.5 w-1.5 rounded-full bg-lime-400" />
                   </span>
                   实时在线
                 </div>
-                <p className="mt-2 text-xs text-slate-400">
+                <p className="mt-2 text-xs text-[var(--shell-muted)]">
                   WebSocket 与采集器持续同步。
                 </p>
               </div>
@@ -103,7 +104,7 @@ export async function AppShell({ children, user }: AppShellProps) {
 
         {/* Main */}
         <div className="flex min-h-screen min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-30 border-b border-white/8 bg-[#05070d]/70 backdrop-blur-xl">
+          <header className="sticky top-0 z-30 border-b border-[var(--shell-border)] bg-[var(--shell-header-bg)] backdrop-blur-xl">
             <div className="flex items-center gap-4 px-4 py-3 sm:px-6 lg:px-8">
               <div className="flex items-center gap-3 lg:hidden">
                 <BrandMark compact />
@@ -125,18 +126,19 @@ export async function AppShell({ children, user }: AppShellProps) {
                   target="_blank"
                   className={cn(
                     buttonVariants({ size: "sm", variant: "secondary" }),
-                    "h-9 px-3 text-slate-100",
+                    "h-9 px-3",
                   )}
                 >
                   <BookOpen className="h-4 w-4" />
                   <span className="hidden sm:inline">使用指南</span>
                   <span className="sm:hidden">指南</span>
                 </Link>
+                <ThemeToggle />
                 <UserMenu user={user} />
               </div>
             </div>
             <div className="hidden lg:block">
-              <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+              <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-[var(--shell-border-strong)] to-transparent" />
             </div>
           </header>
 

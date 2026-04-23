@@ -12,11 +12,12 @@ const badgeVariants = cva(
     variants: {
       variant: {
         accent: "bg-cyan-400/10 text-cyan-200 ring-cyan-400/25",
-        muted: "bg-white/[0.06] text-slate-300 ring-white/10",
+        muted:
+          "bg-[var(--shell-control-bg)] text-[var(--shell-muted)] ring-[var(--shell-border)]",
         warm: "bg-amber-400/10 text-amber-200 ring-amber-400/25",
         success: "bg-lime-400/10 text-lime-200 ring-lime-400/25",
         danger: "bg-rose-400/10 text-rose-200 ring-rose-400/25",
-        outline: "bg-transparent text-slate-300 ring-white/15",
+        outline: "bg-transparent text-[var(--shell-muted)] ring-[var(--shell-border)]",
         aurora:
           "text-white bg-[linear-gradient(135deg,rgba(34,211,238,0.35),rgba(168,85,247,0.35))] ring-white/20",
       },

@@ -88,7 +88,7 @@ export function WorkspaceSwitcher({ workspaces }: WorkspaceSwitcherProps) {
     return (
       <Link
         href="/workspaces"
-        className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-slate-300 transition hover:border-white/20 hover:text-white"
+        className="inline-flex items-center gap-2 rounded-full border border-[var(--shell-border)] bg-[var(--shell-control-bg)] px-3 py-1.5 text-xs text-[var(--shell-muted)] transition hover:border-[var(--shell-border-strong)] hover:text-[var(--shell-fg)]"
       >
         <Folders className="h-3.5 w-3.5" />
         创建工作区
@@ -102,8 +102,10 @@ export function WorkspaceSwitcher({ workspaces }: WorkspaceSwitcherProps) {
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "inline-flex max-w-[260px] items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs transition hover:border-white/20",
-          open ? "border-white/20 text-white" : "text-slate-200",
+          "inline-flex max-w-[260px] items-center gap-2 rounded-full border border-[var(--shell-border)] bg-[var(--shell-control-bg)] px-3 py-1.5 text-xs transition hover:border-[var(--shell-border-strong)]",
+          open
+            ? "border-[var(--shell-border-strong)] text-[var(--shell-fg)]"
+            : "text-[var(--shell-fg)]",
         )}
       >
         <Folders className="h-3.5 w-3.5 text-cyan-300" />
@@ -120,21 +122,21 @@ export function WorkspaceSwitcher({ workspaces }: WorkspaceSwitcherProps) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 380, damping: 30 }}
-            className="absolute right-0 top-[calc(100%+8px)] z-50 w-[min(380px,90vw)] overflow-hidden rounded-2xl border border-white/12 bg-[#0a0f1a]/95 shadow-[0_30px_80px_rgba(0,0,0,0.55)] backdrop-blur-xl"
+            className="absolute right-0 top-[calc(100%+8px)] z-50 w-[min(380px,90vw)] overflow-hidden rounded-2xl border border-[var(--shell-border)] bg-[var(--shell-dropdown-bg)] shadow-[var(--shell-dropdown-shadow)] backdrop-blur-xl"
           >
-            <div className="flex items-center gap-2 border-b border-white/8 px-3">
-              <Search className="h-3.5 w-3.5 text-slate-400" />
+            <div className="flex items-center gap-2 border-b border-[var(--shell-border)] px-3">
+              <Search className="h-3.5 w-3.5 text-[var(--shell-muted)]" />
               <input
                 autoFocus
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="搜索工作区…"
-                className="h-10 flex-1 bg-transparent text-xs text-white outline-none placeholder:text-slate-500"
+                className="h-10 flex-1 bg-transparent text-xs text-[var(--shell-fg)] outline-none placeholder:text-[var(--shell-muted)]"
               />
             </div>
             <div className="max-h-[360px] overflow-y-auto p-1.5">
               {filtered.length === 0 ? (
-                <p className="px-3 py-6 text-center text-xs text-slate-500">
+                <p className="px-3 py-6 text-center text-xs text-[var(--shell-muted)]">
                   未找到匹配的工作区
                 </p>
               ) : (
@@ -154,13 +156,13 @@ export function WorkspaceSwitcher({ workspaces }: WorkspaceSwitcherProps) {
                           className={cn(
                             "flex w-full items-start justify-between gap-3 rounded-xl px-3 py-2 text-left transition",
                             active
-                              ? "bg-white/[0.08] text-white"
-                              : "text-slate-300 hover:bg-white/[0.05] hover:text-white",
+                              ? "bg-[var(--shell-selected-bg)] text-[var(--shell-fg)]"
+                              : "text-[var(--shell-muted)] hover:bg-[var(--shell-control-bg-hover)] hover:text-[var(--shell-fg)]",
                           )}
                         >
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium">{ws.name}</p>
-                            <p className="truncate text-[11px] text-slate-500">
+                            <p className="truncate text-[11px] text-[var(--shell-muted)]">
                               {ws.description || ws.slug}
                             </p>
                           </div>
@@ -174,14 +176,14 @@ export function WorkspaceSwitcher({ workspaces }: WorkspaceSwitcherProps) {
                 </ul>
               )}
             </div>
-            <div className="border-t border-white/8 p-1.5">
+            <div className="border-t border-[var(--shell-border)] p-1.5">
               <Link
                 href="/workspaces"
                 onClick={() => setOpen(false)}
-                className="flex items-center justify-between rounded-xl px-3 py-2 text-xs text-slate-300 transition hover:bg-white/[0.05] hover:text-white"
+                className="flex items-center justify-between rounded-xl px-3 py-2 text-xs text-[var(--shell-muted)] transition hover:bg-[var(--shell-control-bg-hover)] hover:text-[var(--shell-fg)]"
               >
                 <span>查看全部工作区</span>
-                <span className="font-mono text-[10px] uppercase tracking-widest text-slate-500">
+                <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--shell-muted)]">
                   /workspaces
                 </span>
               </Link>
