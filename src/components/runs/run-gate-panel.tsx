@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 
 import type { RunGateInfo } from "@/lib/view-models/runs";
 
@@ -29,14 +29,35 @@ const STATUS_LABEL: Record<string, string> = {
   expired: "已过期",
 };
 
+// 点击"同意/拒绝"后的本地防抖时长（毫秒）。
+// 原因：审批指令需要经 ControlOutbox → visual watch → inbox-consumer 反写 state.snapshot
+// 再由 WS/refresh 回灌到前端，整个闭环在真实环境里约 2~5s。期间 gate.pendingGate 仍是旧值，
+// 如果用户连点就会重复下发，造成截图里的 "No pending approval gate found / 冲突" 语义噪音。
+const SUBMIT_COOLDOWN_MS = 5000;
+
 export function RunGatePanel({ workspaceId, runKey, gate }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(false);
+  const cooldownTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (cooldownTimer.current) clearTimeout(cooldownTimer.current);
+    };
+  }, []);
 
   const send = useCallback(
     (decision: "approved" | "rejected") => {
+      if (cooldown) return;
       const requestId = `req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      setCooldown(true);
+      if (cooldownTimer.current) clearTimeout(cooldownTimer.current);
+      cooldownTimer.current = setTimeout(
+        () => setCooldown(false),
+        SUBMIT_COOLDOWN_MS,
+      );
       startTransition(() => {
         fetch("/api/control/approve", {
           method: "POST",
@@ -55,16 +76,17 @@ export function RunGatePanel({ workspaceId, runKey, gate }: Props) {
             if (!response.ok) {
               throw new Error(await response.text());
             }
-            // 审批指令落到 ControlOutbox 后，真正"推进下一步"仍在 IDE 侧：
-            // - 后台有 `node bin/cli.js visual watch` 守护 → 自动拉取并清 gate
-            // - 否则需要用户回到 Cursor / Claude Code 执行 /spec-continue
+            // 闭环链路：approve → ControlOutbox → visual watch → inbox-consumer
+            //   → approveRunState + writeGateSignal(.ai-spec/gate-signal.json)
+            //   → IDE 侧 AI（已进入 "visual 门禁等待循环"）每 3s poll 命中 → 自动 /spec-continue
+            // 前提：项目根后台已跑 `node bin/cli.js visual watch` 且 IDE 对话在门禁处
+            //      按规则 15-visual-gate-wait 进入了等待循环（Cursor rule / Claude skill 已注入）。
+            // 超时：AI 侧 60s 未收到信号会按默认策略自动放行继续。
             setFeedback(
               decision === "approved"
-                ? "已批准。若后台运行了 `cli.js visual watch` 会自动推进；否则请回 IDE 执行 /spec-continue。"
-                : "已拒绝。请回 IDE 查看驳回原因并按提示修正。",
+                ? "已批准。若项目已跑 `cli.js visual watch` 且 IDE 对话处于门禁等待循环，将在约 3s 内自动继续；60s 未收到信号会按默认策略放行。"
+                : "已拒绝。IDE 对话收到 gate-signal.json(decision=rejected) 后会停止推进并在对话里汇报；请按驳回原因修正后重走流程。",
             );
-            // 显式兜底：让 gate 卡片与发件箱状态立刻刷到最新
-            // （不依赖 WebSocket 广播是否到货）
             try {
               router.refresh();
             } catch {
@@ -74,10 +96,15 @@ export function RunGatePanel({ workspaceId, runKey, gate }: Props) {
           .catch((err: unknown) => {
             const message = err instanceof Error ? err.message : String(err);
             setFeedback(`下发失败：${message}`);
+            setCooldown(false);
+            if (cooldownTimer.current) {
+              clearTimeout(cooldownTimer.current);
+              cooldownTimer.current = null;
+            }
           });
       });
     },
-    [gate.pendingGate, router, runKey, workspaceId],
+    [cooldown, gate.pendingGate, router, runKey, workspaceId],
   );
 
   return (
@@ -118,20 +145,50 @@ export function RunGatePanel({ workspaceId, runKey, gate }: Props) {
       </div>
 
       <div className="mt-4 flex flex-wrap gap-3">
-        <button
-          disabled={pending || !gate.awaitingDecision}
-          onClick={() => send("approved")}
-          className="rounded-full border border-emerald-300/50 bg-emerald-500/15 px-4 py-2 text-sm font-medium text-emerald-100 transition hover:bg-emerald-500/25 disabled:cursor-not-allowed disabled:opacity-40"
+        <span
+          title={
+            cooldown
+              ? "刚刚已下发，正在等待后端回灌 state.snapshot（约 5 秒）。"
+              : gate.awaitingDecision
+                ? undefined
+                : "当前 run 后端未处于待审批态（pending_gate 为空），请先回 IDE 在对话框确认，或等待 state.snapshot 进入 before-* gate。"
+          }
         >
-          同意 → 推进
-        </button>
-        <button
-          disabled={pending || !gate.awaitingDecision}
-          onClick={() => send("rejected")}
-          className="rounded-full border border-rose-300/50 bg-rose-500/15 px-4 py-2 text-sm font-medium text-rose-100 transition hover:bg-rose-500/25 disabled:cursor-not-allowed disabled:opacity-40"
+          <button
+            disabled={pending || cooldown || !gate.awaitingDecision}
+            onClick={() => send("approved")}
+            className="rounded-full border border-emerald-300/50 bg-emerald-500/15 px-4 py-2 text-sm font-medium text-emerald-100 transition hover:bg-emerald-500/25 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {cooldown ? "已下发，等待回灌…" : "同意 → 推进"}
+          </button>
+        </span>
+        <span
+          title={
+            cooldown
+              ? "刚刚已下发，正在等待后端回灌 state.snapshot（约 5 秒）。"
+              : gate.awaitingDecision
+                ? undefined
+                : "当前 run 后端未处于待审批态，无法拒绝。"
+          }
         >
-          拒绝
-        </button>
+          <button
+            disabled={pending || cooldown || !gate.awaitingDecision}
+            onClick={() => send("rejected")}
+            className="rounded-full border border-rose-300/50 bg-rose-500/15 px-4 py-2 text-sm font-medium text-rose-100 transition hover:bg-rose-500/25 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            拒绝
+          </button>
+        </span>
+        {!gate.awaitingDecision && !feedback ? (
+          <p className="basis-full text-xs leading-relaxed text-amber-200/80">
+            当前 run 后端未处于 Visual 待审批态（pending_gate ={" "}
+            <code className="font-mono text-amber-100">
+              {gate.pendingGate ? `"${gate.pendingGate}"` : "null"}
+            </code>
+            ）。如 IDE 对话框要求"用一句话确认"，请回 Cursor / Claude Code
+            对话框回复"同意按当前实现继续"；Visual 这里不会发出新的审批指令。
+          </p>
+        ) : null}
         {feedback ? (
           <p className="basis-full text-xs leading-relaxed text-white/60">
             {feedback}

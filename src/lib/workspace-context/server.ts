@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 
+import { serverEnv } from "@/lib/db/env";
 import { prisma } from "@/lib/db/prisma";
 import { ensureReadModelBootstrap } from "@/lib/services/read-model";
 
@@ -83,7 +84,7 @@ export async function rememberWorkspaceSlug(slug: string) {
     store.set(LAST_WORKSPACE_COOKIE, slug, {
       httpOnly: false,
       sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
+      secure: serverEnv.BR_AI_SPEC_VISUAL_COOKIE_SECURE,
       path: "/",
       expires,
     });

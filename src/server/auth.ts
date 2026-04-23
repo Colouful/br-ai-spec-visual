@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 
 import { authenticateLocalUser } from '@/lib/auth/local-accounts';
+import { serverEnv } from '@/lib/db/env';
 
 import { HttpError } from './http.ts';
 import { destroySession, getSession, createSession, type SessionUser } from './repository.ts';
@@ -12,7 +13,7 @@ function buildCookieOptions() {
   return {
     httpOnly: true,
     sameSite: 'lax' as const,
-    secure: process.env.NODE_ENV === 'production',
+    secure: serverEnv.BR_AI_SPEC_VISUAL_COOKIE_SECURE,
     path: '/',
     maxAge: 60 * 60 * 12,
   };

@@ -53,7 +53,9 @@ async function setSessionCookie(payload: SessionPayload) {
   cookieStore.set(serverEnv.BR_AI_SPEC_VISUAL_COOKIE_NAME, token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    // 仅当显式声明部署在 HTTPS 下时才打 Secure 标记。
+    // Docker/内网通过 HTTP 暴露时必须为 false，否则 cookie 不会被浏览器保存。
+    secure: serverEnv.BR_AI_SPEC_VISUAL_COOKIE_SECURE,
     path: "/",
     expires: new Date(payload.expiresAt),
   });

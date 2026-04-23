@@ -318,6 +318,38 @@ async function createControlAction(
     throw new HttpError(404, 'Workspace not found');
   }
 
+  // 对 approve 做 run_id 一致性校验：确保批准目标就是当前 workspace 真正在门禁等待
+  // 的那个 run，避免批到陈旧 run（旧现象：auto 侧 inbox-consumer 因 run_id 错配返回
+  // "No pending approval gate found"，receipt rejected）。
+  // 允许关闭：前端或自动化场景传 `force: true` 跳过。
+  if (command.command === 'approve' && body.force !== true) {
+    const runState = await prisma.runState.findUnique({
+      where: {
+        workspaceId_runKey: {
+          workspaceId: command.workspace_id,
+          runKey: command.run_id,
+        },
+      },
+      select: { status: true, runKey: true },
+    });
+    if (!runState) {
+      throw new HttpError(
+        409,
+        `Run "${command.run_id}" not found in workspace "${command.workspace_id}". ` +
+          `Please reload the run detail page (it may refer to a stale run).`,
+      );
+    }
+    const status = (runState.status || '').toLowerCase();
+    const approvable = status === 'waiting-approval' || status === 'paused';
+    if (!approvable) {
+      throw new HttpError(
+        409,
+        `Run "${command.run_id}" is not waiting for approval (current status: "${runState.status || 'unknown'}"). ` +
+          `Approving a non-waiting run would be rejected by the IDE side. Pass { force: true } to override.`,
+      );
+    }
+  }
+
   const controlRecord = recordControlCommand(runtime.repository, command);
   const delivery = publishControlCommand(controlRecord);
 

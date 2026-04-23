@@ -395,6 +395,101 @@ nohup node "/Users/lizhenwei/workspace/vueworkspace/bairong/br-ai-spec/bin/cli.j
 
 ---
 
+## 6.2 Gate Signal 闭环（审批 → IDE 原对话自动继续）
+
+本节验收 v1.1 新增的 **gate-signal** 能力：Visual 页面点"同意"后，IDE 对话**无需人工敲 `/spec-continue`** 即可自动续上。原理：
+
+1. 用户在 Visual 点同意 → 走既有 ControlOutbox
+2. `cli.js visual watch` 拉到 outbox → `inbox-consumer.applyControl` 成功应用后**切面式**写 `.ai-spec/gate-signal.json`（由 `internal/visual-hooks/gate-signal.js` 提供）
+3. IDE 中的 AI 已按规则 `15-visual-gate-wait`（Cursor） / skill `wait-for-gate-signal`（Claude Code）**在原对话里进入 3s 轮询循环**
+4. AI 读到 `gate-signal.json` 且 `run_id + gate + ts_ms` 全部匹配 → 立即 `/spec-continue`
+5. 60s 未收到信号 → AI 按默认策略自动放行继续
+
+### 6.2.1 前置
+
+- `br-ai-spec` 侧已更新到包含 `internal/visual-hooks/gate-signal.js` 的版本
+- 业务仓 `.cursor/rules/common/15-visual-gate-wait.md` 或 `.agents/skills/common/wait-for-gate-signal/SKILL.md` 已注入（`init` 默认会带）
+- 项目根后台已跑 `visual watch`（见 6.1）
+
+### 6.2.2 正向验收（审批命中自动继续）
+
+1. 在 Cursor / Claude Code 里跑 `/spec-start <真实需求>`，等跑到 `before-implementation` 门禁时，AI **应主动**在对话里输出：
+
+   ```
+   [T+3s] 等待 Visual 审批（run=run_xxx gate=before-implementation）...
+   [T+6s] 等待 Visual 审批（run=run_xxx gate=before-implementation）...
+   ```
+
+   若 AI 直接挂起不轮询，说明规则/skill 未生效，先排查 `.cursor/rules/common/15-visual-gate-wait.md` 是否存在。
+
+2. 打开 `/w/<slug>/runs/<runId>` → 点「同意 → 推进」。
+
+3. 2~5 秒内在项目根验证信号落盘：
+
+   ```bash
+   cat .ai-spec/gate-signal.json
+   ```
+
+   期望：JSON 含 `"decision": "approved"`、`run_id` 与当前 run 一致、`ts_ms` 为刚才时间点。
+
+4. IDE 原对话应在下一轮 poll（≤3s）里识别信号并自动执行 `/spec-continue`，**无需人工操作**。
+
+### 6.2.3 反向验收（陈旧 run_id 错配 → 409）
+
+模拟用户打开了陈旧 run 详情页点批准的场景：
+
+```bash
+curl -s -X POST http://localhost:18780/api/control/approve \
+  -H 'Content-Type: application/json' \
+  --cookie "<登录态>" \
+  -d '{"request_id":"req_test","workspace_id":"real-dev-16","run_id":"run_stale_xxx","actor_id":"smoke","decision":"approved","gate":"before-implementation"}'
+```
+
+期望：HTTP 409，body 提示 `Run "run_stale_xxx" not found in workspace ...` 或 `is not waiting for approval`。
+
+UI 侧在 run-gate-panel 里会把 HttpError 文本显示在 feedback 区域（`下发失败：...`）。
+
+### 6.2.4 超时兜底验收（AI 60s 默认放行）
+
+1. 在门禁处**不**点任何审批，让 AI 自己轮询。
+2. 观察 60s 内 AI 对话里每 3s 输出一行 `[T+Ns] 等待...`，第 20 轮后应输出：
+
+   ```
+   60 秒内未收到 Visual 审批决定，按默认策略自动放行，继续执行 /spec-continue
+   ```
+
+3. AI 应直接跑 `/spec-continue`，不卡死。
+
+### 6.2.5 gate-signal 写失败兜底验收
+
+模拟磁盘/权限异常：
+
+```bash
+chmod a-w .ai-spec 2>/dev/null
+# 在 Visual 点同意
+# 观察
+cat .ai-spec/logs/gate-signal.log
+# 期望：有 write.writeFile 的 error 记录
+# 同时 ControlOutbox.status 仍应为 applied（主链路不受影响）
+docker exec br-ai-spec-visual-db-1 mariadb -uroot -proot_password_123 br_ai_spec_visual -e \
+  "SELECT status FROM ControlOutbox ORDER BY createdAt DESC LIMIT 1;"
+chmod u+w .ai-spec
+```
+
+关键证据：**`.ai-spec/logs/gate-signal.log` 有错、但 `ControlOutbox.status = applied` 照常**，说明切面能力完全解耦，不污染主链路。
+
+### 6.2.6 排障速查表
+
+| 现象 | 可能原因 | 修复 |
+|---|---|---|
+| AI 不进入轮询循环 | 规则/skill 未注入 | 检查 `.cursor/rules/common/15-visual-gate-wait.md` 存在且内容完整 |
+| `gate-signal.json` 没生成但 watch 日志正常 | 权限 / 磁盘满 | `cat .ai-spec/logs/gate-signal.log` |
+| AI 读到 signal 但没推进 | `run_id` / `gate` / `ts_ms` 任一对不上 | 对比 `current-run.json` 与 `gate-signal.json` 的 `run_id`、`pending_gate`、`ts_ms` |
+| Visual 点同意直接 409 | 批的是陈旧 run | 刷新 run 详情页，URL 里的 runId 应为当前 `waiting-approval` 那条 |
+| 多轮连点同意 UI 没变化 | 5 秒防抖（SUBMIT_COOLDOWN_MS） | 正常行为，等 `state.snapshot` 回灌 |
+
+---
+
 ## 7. 收尾
 
 ```bash
