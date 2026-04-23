@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useState, useTransition } from "react";
 
 import type { RunGateInfo } from "@/lib/view-models/runs";
@@ -29,6 +30,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export function RunGatePanel({ workspaceId, runKey, gate }: Props) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [feedback, setFeedback] = useState<string | null>(null);
 
@@ -53,9 +55,21 @@ export function RunGatePanel({ workspaceId, runKey, gate }: Props) {
             if (!response.ok) {
               throw new Error(await response.text());
             }
+            // 审批指令落到 ControlOutbox 后，真正"推进下一步"仍在 IDE 侧：
+            // - 后台有 `node bin/cli.js visual watch` 守护 → 自动拉取并清 gate
+            // - 否则需要用户回到 Cursor / Claude Code 执行 /spec-continue
             setFeedback(
-              `已下发 ${decision === "approved" ? "同意" : "拒绝"}`,
+              decision === "approved"
+                ? "已批准。若后台运行了 `cli.js visual watch` 会自动推进；否则请回 IDE 执行 /spec-continue。"
+                : "已拒绝。请回 IDE 查看驳回原因并按提示修正。",
             );
+            // 显式兜底：让 gate 卡片与发件箱状态立刻刷到最新
+            // （不依赖 WebSocket 广播是否到货）
+            try {
+              router.refresh();
+            } catch {
+              /* noop */
+            }
           })
           .catch((err: unknown) => {
             const message = err instanceof Error ? err.message : String(err);
@@ -63,7 +77,7 @@ export function RunGatePanel({ workspaceId, runKey, gate }: Props) {
           });
       });
     },
-    [gate.pendingGate, runKey, workspaceId],
+    [gate.pendingGate, router, runKey, workspaceId],
   );
 
   return (
@@ -119,7 +133,9 @@ export function RunGatePanel({ workspaceId, runKey, gate }: Props) {
           拒绝
         </button>
         {feedback ? (
-          <span className="text-xs text-white/60">{feedback}</span>
+          <p className="basis-full text-xs leading-relaxed text-white/60">
+            {feedback}
+          </p>
         ) : null}
       </div>
 

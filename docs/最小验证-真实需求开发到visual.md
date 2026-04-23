@@ -334,6 +334,67 @@ docker exec br-ai-spec-visual-db-1 mariadb -uroot -proot_password_123 br_ai_spec
 
 ---
 
+## 6.1 Visual 审批 → IDE 自动继续（可选守护 `visual watch`）
+
+Visual 页面点「同意 → 推进 / 拒绝」**只负责下决策**：命令会落到 `ControlOutbox`（见 `/api/control/approve` 响应中的 `outbox` 字段）。真正把 `pending_gate` 清掉、让 IDE 能继续跑 `/spec-continue`，需要 CLI 侧把 outbox **拉回本地并应用**。
+
+原先的 CLI 只在 `protocol-step` / `protocol-advance` / `protocol-update` / `protocol-status` 四个子命令启动时各拉一次（`consumeInbox`），所以 **用户不主动敲命令就不会推进**。
+
+### 启动后台守护
+
+在被测项目根后台起一个长驻进程：
+
+```bash
+cd "/Users/lizhenwei/workspace/test/test-ai-spec/prd-to-delivery-local-first-060/test_副本16"
+
+# 前台看日志
+node "/Users/lizhenwei/workspace/vueworkspace/bairong/br-ai-spec/bin/cli.js" visual watch --interval 2000
+
+# 或后台 + 日志落盘（推荐）
+nohup node "/Users/lizhenwei/workspace/vueworkspace/bairong/br-ai-spec/bin/cli.js" visual watch \
+  --interval 2000 \
+  >> .ai-spec/logs/visual-watch.stdout.log 2>&1 &
+```
+
+约束与兜底：
+
+- 完全复用 `internal/visual-hooks/inbox-consumer.js` 的 `consumeInbox`，不走新分支 / 不引入新状态机
+- 任何异常仅写 `.ai-spec/logs/visual-watch.log` 的 JSON Line，**不 crash**；连续失败指数退避到 30s
+- 未配置或 `enabled=false` 时直接退出 1，不污染项目
+- 与 `init` / `update` / `protocol-*` 零交叉：不动既有命令入口
+
+### 审批后的信号：`.ai-spec/next-step.md`
+
+`consumeInbox` 每次成功应用 `approve_gate` / `resume_run` 都会向项目根的 `.ai-spec/next-step.md` **追加** 一条记录，形如：
+
+```markdown
+## [2026-04-22T13:27:12.345Z] approve_gate applied
+
+- run_id: `run_20260422_212507_ft63`
+- gate: `before-implementation`
+- next_role: `frontend-developer`
+- action: 请在 IDE (Cursor / Claude Code) 执行 `/spec-continue` 继续下一步开发。
+```
+
+在 Cursor / Claude Code 的 AGENTS.md 里可以让 AI 监听这个文件，或者直接人工执行 `/spec-continue`。写入失败被 silent 吞掉，**不影响** apply 主链。
+
+### 验收步骤
+
+1. visual 启动在 18780，项目装好 bridge（参考 §2）
+2. 项目根后台跑 `visual watch`，确认日志里出现 `[visual watch] start`
+3. 浏览器打开 `/workspaces/<slug>/board` **与** `/w/<slug>/runs/<runId>`
+4. IDE 里跑一轮 `/spec-start`——看板「执行」列应**不手动刷新**就出现新 run 卡（修复 A：`router.refresh()` 驱动 Server Component 重跑）
+5. 在 run-detail 页点「同意 → 推进」——
+   - 页面文案变成「已批准。若后台运行了 `cli.js visual watch` 会自动推进…」（修复 B）
+   - 2 秒内 `.ai-spec/inbox/.applied/` 出现 `control-*.json`，`.ai-spec/next-step.md` 多一条记录（修复 C+D）
+   - `docker exec br-ai-spec-visual-db-1 mariadb -uroot -proot_password_123 br_ai_spec_visual -e "SELECT status FROM ControlOutbox ORDER BY createdAt DESC LIMIT 1;"` 应显示 `applied`
+
+### 停守护
+
+`Ctrl+C`（前台）或 `kill <pid>`（后台）。守护会吞 SIGINT/SIGTERM 并打一条 `stop` 日志再退。
+
+---
+
 ## 7. 收尾
 
 ```bash

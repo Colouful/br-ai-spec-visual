@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState, useTransition } from "react";
 
 import type {
@@ -9,6 +10,14 @@ import type {
   BoardLaneVm,
   WorkspaceBoardVm,
 } from "@/lib/view-models/board";
+
+/**
+ * 乐观拖拽 overlay：仅记录"这张卡被临时挪到哪条 lane"。
+ * 真正的 lane 数据来自 props（由父级 RSC 在 router.refresh 后重新拉取），
+ * 从而让 WebSocket 驱动的 ingest.projected → router.refresh → 新 board
+ * 能真正反映到 UI 上。失败时把这条 overlay 删掉即回滚。
+ */
+type DragOverlay = Record<string, BoardLaneId>;
 
 type ToastVariant = "success" | "error" | "info";
 
@@ -40,11 +49,42 @@ const LANE_TRANSITIONS: Record<BoardLaneId, BoardLaneId[]> = {
 };
 
 export function WorkspaceBoard({ workspaceId, board }: BoardProps) {
-  const [lanes, setLanes] = useState(board.lanes);
+  const router = useRouter();
+  const [overlay, setOverlay] = useState<DragOverlay>({});
   const [toast, setToast] = useState<ToastState | null>(null);
   const [pending, startTransition] = useTransition();
   const [dragCardId, setDragCardId] = useState<string | null>(null);
   const [hoverLaneId, setHoverLaneId] = useState<BoardLaneId | null>(null);
+
+  // 派生 lanes：始终以 props 为真相，overlay 仅做拖拽态 UI 迁移，
+  // 这样 router.refresh() 后父 RSC 带回的新 board 会立刻反映到列表里。
+  const lanes = useMemo<BoardLaneVm[]>(() => {
+    if (Object.keys(overlay).length === 0) return board.lanes;
+    const movedCards = new Map<string, BoardCardVm>();
+    for (const lane of board.lanes) {
+      for (const card of lane.cards) {
+        if (overlay[card.id] && overlay[card.id] !== lane.id) {
+          movedCards.set(card.id, card);
+        }
+      }
+    }
+    if (movedCards.size === 0) return board.lanes;
+    return board.lanes.map((lane) => {
+      const filtered = lane.cards.filter(
+        (card) => !(overlay[card.id] && overlay[card.id] !== lane.id),
+      );
+      const incoming: BoardCardVm[] = [];
+      for (const [cardId, target] of Object.entries(overlay)) {
+        if (target !== lane.id) continue;
+        const card = movedCards.get(cardId);
+        if (card) incoming.push({ ...card, laneId: lane.id });
+      }
+      if (incoming.length === 0 && filtered.length === lane.cards.length) {
+        return lane;
+      }
+      return { ...lane, cards: [...incoming, ...filtered] };
+    });
+  }, [board.lanes, overlay]);
 
   const laneById = useMemo(() => {
     const map = new Map<BoardLaneId, BoardLaneVm>();
@@ -57,29 +97,21 @@ export function WorkspaceBoard({ workspaceId, board }: BoardProps) {
     window.setTimeout(() => setToast(null), 4200);
   }, []);
 
-  const moveCard = useCallback(
-    (cardId: string, fromLane: BoardLaneId, toLane: BoardLaneId) => {
-      setLanes((prev) =>
-        prev.map((lane) => {
-          if (lane.id === fromLane) {
-            return { ...lane, cards: lane.cards.filter((c) => c.id !== cardId) };
-          }
-          if (lane.id === toLane) {
-            const card = prev
-              .find((l) => l.id === fromLane)
-              ?.cards.find((c) => c.id === cardId);
-            if (!card) return lane;
-            return {
-              ...lane,
-              cards: [{ ...card, laneId: toLane }, ...lane.cards],
-            };
-          }
-          return lane;
-        }),
-      );
+  const applyOverlay = useCallback(
+    (cardId: string, toLane: BoardLaneId) => {
+      setOverlay((prev) => ({ ...prev, [cardId]: toLane }));
     },
     [],
   );
+
+  const clearOverlay = useCallback((cardId: string) => {
+    setOverlay((prev) => {
+      if (!(cardId in prev)) return prev;
+      const next = { ...prev };
+      delete next[cardId];
+      return next;
+    });
+  }, []);
 
   const sendControlCommand = useCallback(
     async (
@@ -141,8 +173,7 @@ export function WorkspaceBoard({ workspaceId, board }: BoardProps) {
       const card = laneById.get(fromLane)?.cards.find((c) => c.id === cardId);
       if (!card) return;
 
-      // 乐观更新
-      moveCard(cardId, fromLane, toLane);
+      applyOverlay(cardId, toLane);
 
       let action: "approve" | "reject" | "resume" | "cancel" = "approve";
       let gate: string | undefined;
@@ -167,16 +198,33 @@ export function WorkspaceBoard({ workspaceId, board }: BoardProps) {
           .then(() => {
             const toTitle = laneById.get(toLane)?.title ?? toLane;
             showToast("success", `已下发：${card.runKey} → ${toTitle}`);
+            // 显式兜底刷新：不依赖 WS 事件也能把 outbox 落盘结果拉回 UI。
+            // overlay 会在新一轮 board props 到来时由派生逻辑自然清除。
+            try {
+              router.refresh();
+            } catch {
+              /* noop */
+            }
+            // 安全兜底：如果 1.5s 内新 props 没覆盖掉 overlay，强行清掉，
+            // 避免卡片停在错误 lane。
+            window.setTimeout(() => clearOverlay(cardId), 1500);
           })
           .catch((err: unknown) => {
             const message = err instanceof Error ? err.message : String(err);
             showToast("error", `下发失败：${message}`);
-            // 回滚
-            moveCard(cardId, toLane, fromLane);
+            clearOverlay(cardId);
           });
       });
     },
-    [laneById, moveCard, sendControlCommand, showToast, startTransition],
+    [
+      applyOverlay,
+      clearOverlay,
+      laneById,
+      router,
+      sendControlCommand,
+      showToast,
+      startTransition,
+    ],
   );
 
   return (
