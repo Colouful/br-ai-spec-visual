@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 
 import type {
   BoardCardVm,
@@ -11,6 +11,8 @@ import type {
   WorkspaceBoardVm,
 } from "@/lib/view-models/board";
 
+import { resolveBoardControlIntent } from "./workspace-board-shared";
+
 /**
  * 乐观拖拽 overlay：仅记录"这张卡被临时挪到哪条 lane"。
  * 真正的 lane 数据来自 props（由父级 RSC 在 router.refresh 后重新拉取），
@@ -18,6 +20,13 @@ import type {
  * 能真正反映到 UI 上。失败时把这条 overlay 删掉即回滚。
  */
 type DragOverlay = Record<string, BoardLaneId>;
+type PendingCommandState = Record<
+  string,
+  {
+    status: string;
+    targetLane: BoardLaneId;
+  }
+>;
 
 type ToastVariant = "success" | "error" | "info";
 
@@ -51,6 +60,8 @@ const LANE_TRANSITIONS: Record<BoardLaneId, BoardLaneId[]> = {
 export function WorkspaceBoard({ workspaceId, board }: BoardProps) {
   const router = useRouter();
   const [overlay, setOverlay] = useState<DragOverlay>({});
+  const [pendingCommandState, setPendingCommandState] =
+    useState<PendingCommandState>({});
   const [toast, setToast] = useState<ToastState | null>(null);
   const [pending, startTransition] = useTransition();
   const [dragCardId, setDragCardId] = useState<string | null>(null);
@@ -92,6 +103,35 @@ export function WorkspaceBoard({ workspaceId, board }: BoardProps) {
     return map;
   }, [lanes]);
 
+  useEffect(() => {
+    if (Object.keys(overlay).length === 0) return;
+
+    const actualLaneByCard = new Map<string, BoardLaneId>();
+    for (const lane of board.lanes) {
+      for (const card of lane.cards) {
+        actualLaneByCard.set(card.id, lane.id);
+      }
+    }
+
+    setOverlay((current) => {
+      let changed = false;
+      const next = { ...current };
+      const nextPending = { ...pendingCommandState };
+      for (const [cardId, targetLane] of Object.entries(current)) {
+        const actualLane = actualLaneByCard.get(cardId);
+        if (!actualLane || actualLane === targetLane) {
+          delete next[cardId];
+          delete nextPending[cardId];
+          changed = true;
+        }
+      }
+      if (changed) {
+        setPendingCommandState(nextPending);
+      }
+      return changed ? next : current;
+    });
+  }, [board.lanes, overlay, pendingCommandState]);
+
   const showToast = useCallback((variant: ToastVariant, message: string) => {
     setToast({ id: `${Date.now()}`, variant, message });
     window.setTimeout(() => setToast(null), 4200);
@@ -106,6 +146,12 @@ export function WorkspaceBoard({ workspaceId, board }: BoardProps) {
 
   const clearOverlay = useCallback((cardId: string) => {
     setOverlay((prev) => {
+      if (!(cardId in prev)) return prev;
+      const next = { ...prev };
+      delete next[cardId];
+      return next;
+    });
+    setPendingCommandState((prev) => {
       if (!(cardId in prev)) return prev;
       const next = { ...prev };
       delete next[cardId];
@@ -152,7 +198,7 @@ export function WorkspaceBoard({ workspaceId, board }: BoardProps) {
         const text = await response.text().catch(() => "");
         throw new Error(text || `request failed: ${response.status}`);
       }
-      return response.json();
+      return response.json() as Promise<{ outbox?: { status?: string } }>;
     },
     [workspaceId],
   );
@@ -175,39 +221,38 @@ export function WorkspaceBoard({ workspaceId, board }: BoardProps) {
 
       applyOverlay(cardId, toLane);
 
-      let action: "approve" | "reject" | "resume" | "cancel" = "approve";
-      let gate: string | undefined;
-      if (toLane === "implementation" && fromLane === "guardian") {
-        action = "approve";
-        gate = card.pendingGate || "before-implementation";
-      } else if (toLane === "implementation" && fromLane === "proposal") {
-        action = "approve";
-        gate = "before-implementation";
-      } else if (toLane === "guardian") {
-        action = "approve";
-        gate = "guardian-review";
-      } else if (toLane === "archive") {
-        action = "approve";
-        gate = "before-archive";
-      } else if (toLane === "proposal") {
-        action = "resume";
+      const intent = resolveBoardControlIntent(card, fromLane, toLane);
+      if (intent.kind === "refresh") {
+        showToast("info", intent.message);
+        clearOverlay(cardId);
+        try {
+          router.refresh();
+        } catch {
+          /* noop */
+        }
+        return;
       }
 
       startTransition(() => {
-        sendControlCommand(card, action, gate)
-          .then(() => {
+        sendControlCommand(card, intent.action, intent.gate)
+          .then((result) => {
             const toTitle = laneById.get(toLane)?.title ?? toLane;
-            showToast("success", `已下发：${card.runKey} → ${toTitle}`);
+            setPendingCommandState((current) => ({
+              ...current,
+              [card.id]: {
+                status: result?.outbox?.status || "pending",
+                targetLane: toLane,
+              },
+            }));
+            showToast("success", `已下发：${card.runKey} → ${toTitle}，等待 auto 应用`);
             // 显式兜底刷新：不依赖 WS 事件也能把 outbox 落盘结果拉回 UI。
-            // overlay 会在新一轮 board props 到来时由派生逻辑自然清除。
+            // overlay 只在服务端真值切到目标列后才清除，避免命令已入 outbox 但
+            // runState 尚未更新时被定时器硬清掉，造成“拖过去又弹回”的假回滚。
             try {
               router.refresh();
             } catch {
               /* noop */
             }
-            // 安全兜底：如果 1.5s 内新 props 没覆盖掉 overlay，强行清掉，
-            // 避免卡片停在错误 lane。
-            window.setTimeout(() => clearOverlay(cardId), 1500);
           })
           .catch((err: unknown) => {
             const message = err instanceof Error ? err.message : String(err);
@@ -244,7 +289,7 @@ export function WorkspaceBoard({ workspaceId, board }: BoardProps) {
           cli(命令行) 边界拉取并签名应用
         </p>
       </details>
-      <div className="min-h-0 min-w-0 max-w-full flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain overscroll-y-none pb-2 [-webkit-overflow-scrolling:touch]">
+      <div className="min-h-0 min-w-0 max-w-full flex-1 overflow-x-auto overscroll-x-contain pb-2 [-webkit-overflow-scrolling:touch]">
         <div className="inline-flex h-full min-h-[12rem] w-max min-w-0 items-stretch gap-5 pr-1">
         {LANE_ORDER.map((laneId) => {
           const lane = laneById.get(laneId);
@@ -285,13 +330,15 @@ export function WorkspaceBoard({ workspaceId, board }: BoardProps) {
                   {lane.cards.length}
                 </span>
               </header>
-              <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overflow-x-hidden overscroll-y-contain pr-1 [scrollbar-gutter:stable]">
+              <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overflow-x-hidden pr-1 [scrollbar-gutter:stable]">
                 {lane.cards.length === 0 ? (
                   <p className="rounded-2xl border border-dashed border-white/10 bg-black/20 p-4 text-center text-xs text-white/40">
                     暂无卡片
                   </p>
                 ) : (
-                  lane.cards.map((card) => (
+                  lane.cards.map((card) => {
+                    const pendingState = pendingCommandState[card.id];
+                    return (
                     <article
                       key={card.id}
                       draggable
@@ -324,6 +371,11 @@ export function WorkspaceBoard({ workspaceId, board }: BoardProps) {
                           关卡(gate) · {card.pendingGate}
                         </p>
                       ) : null}
+                      {pendingState ? (
+                        <p className="mt-2 inline-flex items-center gap-1 rounded-full border border-cyan-300/20 bg-cyan-400/10 px-2 py-0.5 text-[10px] text-cyan-100">
+                          待 auto 应用 · outbox {pendingState.status}
+                        </p>
+                      ) : null}
                       {card.currentRole ? (
                         <p className="mt-1 text-[11px] text-white/50">
                           角色(role)：<span className="text-white/80">{card.currentRole}</span>
@@ -342,7 +394,8 @@ export function WorkspaceBoard({ workspaceId, board }: BoardProps) {
                         </div>
                       ) : null}
                     </article>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>

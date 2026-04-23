@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 
 import { ensureDemoWorkspace, ensureSeededUsers } from "@/lib/db/bootstrap";
 import { prisma } from "@/lib/db/prisma";
+import { buildWorkspaceOnboardingVm } from "@/lib/view-models/workspace-integration";
 
 function asRecord(value: Prisma.JsonValue | null | undefined) {
   return value && typeof value === "object" && !Array.isArray(value)
@@ -79,40 +80,71 @@ export async function ensureReadModelBootstrap() {
 export async function listWorkspaceReadModels() {
   await ensureReadModelBootstrap();
 
-  const items = await prisma.workspace.findMany({
-    orderBy: {
-      updatedAt: "desc",
-    },
-    include: {
-      _count: {
-        select: {
-          runStates: true,
-          changeDocuments: true,
-          alerts: true,
-          registryItems: true,
+  const [items, archivedRows] = await Promise.all([
+    prisma.workspace.findMany({
+      orderBy: {
+        updatedAt: "desc",
+      },
+      include: {
+        _count: {
+          select: {
+            runStates: true,
+            changeDocuments: true,
+            alerts: true,
+            registryItems: true,
+          },
+        },
+        members: {
+          include: {
+            user: true,
+          },
+          take: 4,
+        },
+        runStates: {
+          orderBy: {
+            lastOccurredAt: "desc",
+          },
+          take: 1,
         },
       },
-      members: {
-        include: {
-          user: true,
-        },
-        take: 4,
+    }),
+    prisma.changeDocument.groupBy({
+      by: ["workspaceId"],
+      where: {
+        OR: [
+          { archivedAt: { not: null } },
+          { status: { in: ["archived", "merged", "completed"] } },
+        ],
       },
-      runStates: {
-        orderBy: {
-          lastOccurredAt: "desc",
-        },
-        take: 1,
-      },
-    },
-  });
+      _count: { _all: true },
+    }),
+  ]);
+
+  const archivedCountMap = new Map(
+    archivedRows.map((row) => [row.workspaceId, row._count._all]),
+  );
 
   return items.map((workspace) => ({
+    ...(() => {
+      const onboarding = buildWorkspaceOnboardingVm({
+        workspaceName: workspace.name,
+        rootPath: workspace.rootPath,
+        runCount: workspace._count.runStates,
+        archiveCount: archivedCountMap.get(workspace.id) ?? 0,
+      });
+      return {
+        onboardingStageKey: onboarding.stage.key,
+        onboardingStageLabel: onboarding.stage.label,
+        onboardingScore: onboarding.score,
+      };
+    })(),
     id: workspace.id,
+    slug: workspace.slug,
     name: workspace.name,
     description:
       workspace.description ||
       "已接入 BR AI Spec Visual 的工作区。",
+    rootPath: workspace.rootPath,
     zone: workspace.rootPath || workspace.slug,
     health: mapWorkspaceHealth({
       status: workspace.status,

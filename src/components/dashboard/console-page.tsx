@@ -9,12 +9,14 @@ export function ConsolePage({
   children,
   actions,
   contentStretch = false,
+  statsVariant = "default",
 }: {
   hero: PageHeroVm;
   children: ReactNode;
   actions?: ReactNode;
   /** 看板等：占满主内容区剩余高度，子项用内部滚动，避免整页被内容撑得过长 */
   contentStretch?: boolean;
+  statsVariant?: "default" | "guide";
 }) {
   return (
     <div
@@ -45,7 +47,7 @@ export function ConsolePage({
           ) : null}
         </div>
         <div className="relative mt-6">
-          <MetricStrip items={hero.stats} />
+          <MetricStrip items={hero.stats} variant={statsVariant} />
         </div>
       </header>
       {contentStretch ? (

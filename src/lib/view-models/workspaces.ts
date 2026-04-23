@@ -11,10 +11,14 @@ import type { MetricVm, PageHeroVm, StatusKey } from "@/lib/view-models/types";
 import {
   buildWorkspaceCardFromApiItem,
   buildWorkspaceHealthBands,
+  buildWorkspaceOnboardingBands,
 } from "@/lib/view-models/workspaces-shared";
+import { computeWorkspaceHealth, type WorkspaceHealthBreakdown } from "@/lib/view-models/workspace-health";
+import { buildWorkspaceOnboardingVm, type WorkspaceOnboardingVm } from "@/lib/view-models/workspace-integration";
 
 export interface WorkspaceCardVm {
   id: string;
+  slug: string;
   name: string;
   description: string;
   zone: string;
@@ -28,17 +32,23 @@ export interface WorkspaceCardVm {
   lastActivity: string;
   focus: string;
   tags: string[];
+  onboardingStageKey: string;
+  onboardingStageLabel: string;
+  onboardingScore: number;
 }
 
 export interface WorkspacesPageVm {
   hero: PageHeroVm;
   healthBands: MetricVm[];
+  onboardingBands: MetricVm[];
   workspaces: WorkspaceCardVm[];
 }
 
 export interface WorkspaceDetailVm {
   hero: PageHeroVm;
   workspace: WorkspaceCardVm;
+  health: WorkspaceHealthBreakdown;
+  onboarding: WorkspaceOnboardingVm;
   metrics: MetricVm[];
   recentRuns: Array<{
     id: string;
@@ -89,6 +99,7 @@ async function createDemoWorkspaceCard(workspaceId: string, now: Date, timeZone:
 
   return {
     id: demoWorkspace.id,
+    slug: demoWorkspace.id,
     name: demoWorkspace.name,
     description: demoWorkspace.description,
     zone: demoWorkspace.zone,
@@ -104,6 +115,21 @@ async function createDemoWorkspaceCard(workspaceId: string, now: Date, timeZone:
       : "No activity",
     focus: demoWorkspace.focus,
     tags: demoWorkspace.tags,
+    onboardingStageKey: workspaceRuns.some((run) => run.status === "completed")
+      ? "archived"
+      : workspaceRuns.length > 0
+        ? "run-ready"
+        : "not-connected",
+    onboardingStageLabel: workspaceRuns.some((run) => run.status === "completed")
+      ? "已归档"
+      : workspaceRuns.length > 0
+        ? "已跑通需求"
+        : "未接入",
+    onboardingScore: workspaceRuns.some((run) => run.status === "completed")
+      ? 56
+      : workspaceRuns.length > 0
+        ? 28
+        : 0,
   } satisfies WorkspaceCardVm;
 }
 
@@ -128,6 +154,9 @@ export async function getWorkspacesPageVm(timeZone = "Asia/Shanghai"): Promise<W
         ],
       },
       healthBands: buildWorkspaceHealthBands(realWorkspaces.map((item) => item.health as StatusKey)),
+      onboardingBands: buildWorkspaceOnboardingBands(
+        workspaces.map((workspace) => workspace.onboardingStageKey),
+      ),
       workspaces,
     };
   }
@@ -153,6 +182,9 @@ export async function getWorkspacesPageVm(timeZone = "Asia/Shanghai"): Promise<W
       ],
     },
     healthBands: buildWorkspaceHealthBands(data.workspaces.map((item) => item.health)),
+    onboardingBands: buildWorkspaceOnboardingBands(
+      workspaces.map((workspace) => workspace.onboardingStageKey),
+    ),
     workspaces,
   };
 }
@@ -164,11 +196,23 @@ export async function getWorkspaceDetailVm(
   const workspaceRecord = await getWorkspaceReadModel(workspaceId);
   if (workspaceRecord) {
     const now = new Date();
+    const health = await computeWorkspaceHealth(workspaceId);
+    const onboarding = buildWorkspaceOnboardingVm({
+      workspaceName: workspaceRecord.name,
+      rootPath: workspaceRecord.rootPath,
+      runCount: workspaceRecord._count.runStates,
+      archiveCount: workspaceRecord.changeDocuments.filter((change) => {
+        const normalizedStatus = String(change.status || "").toLowerCase();
+        return Boolean(change.archivedAt) || ["archived", "merged", "completed"].includes(normalizedStatus);
+      }).length,
+    });
     const workspace = mapRealWorkspaceCard(
       {
         id: workspaceRecord.id,
+        slug: workspaceRecord.slug,
         name: workspaceRecord.name,
         description: workspaceRecord.description || "已接入 BR AI Spec Visual 的工作区。",
+        rootPath: workspaceRecord.rootPath,
         zone: workspaceRecord.rootPath || workspaceRecord.slug,
         health:
           workspaceRecord._count.alerts > 0
@@ -192,6 +236,9 @@ export async function getWorkspaceDetailVm(
           workspaceRecord.updatedAt.toISOString(),
         focus: workspaceRecord.runStates[0]?.lastEventType || "等待实时事件更新",
         tags: [workspaceRecord.status, workspaceRecord._count.registryItems > 0 ? "registry" : "empty"],
+        onboardingStageKey: onboarding.stage.key,
+        onboardingStageLabel: onboarding.stage.label,
+        onboardingScore: onboarding.score,
       },
       now,
       timeZone,
@@ -209,6 +256,8 @@ export async function getWorkspaceDetailVm(
         ],
       },
       workspace,
+      health,
+      onboarding,
       metrics: [
         { label: "成员", value: String(workspaceRecord.members.length), note: workspace.owners },
         { label: "最新事件", value: workspaceRecord.runStates[0]?.lastEventType || "暂无运行事件" },
@@ -251,6 +300,8 @@ export async function getWorkspaceDetailVm(
   }
 
   const workspace = await createDemoWorkspaceCard(demoWorkspace.id, now, timeZone);
+  const workspaceRuns = data.runs.filter((run) => run.workspaceId === demoWorkspace.id);
+  const workspaceChanges = data.changes.filter((change) => change.workspaceId === demoWorkspace.id);
   const recentRuns = data.runs
     .filter((run) => run.workspaceId === demoWorkspace.id)
     .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
@@ -284,6 +335,32 @@ export async function getWorkspaceDetailVm(
       ],
     },
     workspace,
+    health: {
+      score: demoWorkspace.health === "healthy" ? 90 : demoWorkspace.health === "warning" ? 70 : 55,
+      grade: demoWorkspace.health === "healthy" ? "A" : demoWorkspace.health === "warning" ? "B" : "C",
+      totals: {
+        runs: workspaceRuns.length,
+        archivedRuns: workspaceRuns.filter((run) => run.status === "completed").length,
+        pendingGates: 0,
+        openAlerts: demoWorkspace.health === "warning" ? 1 : 0,
+        activeChanges: workspaceChanges.filter((change) => change.status !== "merged").length,
+        receivedReceipts: 0,
+      },
+      signals: [
+        { label: "未关闭告警", value: demoWorkspace.health === "warning" ? "1" : "0", tone: demoWorkspace.health === "warning" ? "warn" : "good" },
+        { label: "待审关卡(Gate)", value: "0", tone: "good" },
+        { label: "发件箱(Outbox) 积压", value: "0", tone: "good" },
+        { label: "24小时控制回执", value: "0", tone: "warn" },
+        { label: "24小时归档事件", value: String(workspaceRuns.filter((run) => run.status === "completed").length), tone: workspaceRuns.some((run) => run.status === "completed") ? "good" : "warn" },
+        { label: "活跃变更", value: String(workspaceChanges.filter((change) => change.status !== "merged").length), tone: workspaceChanges.some((change) => change.status !== "merged") ? "good" : "warn" },
+      ],
+    },
+    onboarding: buildWorkspaceOnboardingVm({
+      workspaceName: demoWorkspace.name,
+      rootPath: null,
+      runCount: workspaceRuns.length,
+      archiveCount: workspaceRuns.filter((run) => run.status === "completed").length,
+    }),
     metrics: [
       { label: "成员", value: demoWorkspace.owners.length.toString(), note: workspace.owners },
       { label: "当前关注点", value: demoWorkspace.focus, note: "可直接替换成真实 API 的诊断摘要" },

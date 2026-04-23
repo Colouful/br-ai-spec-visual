@@ -8,6 +8,7 @@ import type { WorkspacesPageVm } from "@/lib/view-models/workspaces";
 import {
   buildWorkspaceCardFromApiItem,
   buildWorkspaceHealthBands,
+  buildWorkspaceOnboardingBands,
   type WorkspaceApiItem,
 } from "@/lib/view-models/workspaces-shared";
 
@@ -81,6 +82,9 @@ export function WorkspacesRealtimeSection({
             : workspace.badge.label === "严重"
               ? "critical"
               : "idle")),
+        onboardingBands: buildWorkspaceOnboardingBands(
+          nextWorkspaces.map((workspace) => workspace.onboardingStageKey),
+        ),
         workspaces: nextWorkspaces,
       };
     });

@@ -99,8 +99,9 @@ export function toPipelineStage(entity: PipelineEntity): PipelineStageId {
       gate ||
       status === "awaiting_review" ||
       status === "review" ||
-      event.includes("gate") ||
-      event.includes("review")
+      status === "waiting-approval" ||
+      status === "paused" ||
+      event.includes("gate-blocked")
     ) {
       return "review";
     }

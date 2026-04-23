@@ -1,6 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
-import { vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { WorkspaceBoard } from "@/components/workspaces/workspace-board";
 import type {
@@ -41,13 +40,18 @@ function makeBoard(): WorkspaceBoardVm {
   };
 }
 
-describe("WorkspaceBoard", () => {
-  it("keeps horizontal lane overflow on the outer board scroller", () => {
+describe("WorkspaceBoard scroll behavior", () => {
+  it("keeps horizontal lane overflow without trapping page-level vertical scrolling", () => {
     render(<WorkspaceBoard workspaceId="workspace-test" board={makeBoard()} />);
 
     const helpPanel = screen.getByText("展开说明").closest("details");
     const laneScroller = helpPanel?.nextElementSibling;
+    const laneBody = laneScroller?.querySelector("div.overflow-y-auto");
 
     expect(laneScroller).toHaveClass("overflow-x-auto");
+    expect(laneScroller).not.toHaveClass("overflow-y-hidden");
+    expect(laneScroller).not.toHaveClass("overscroll-y-none");
+    expect(laneBody).toHaveClass("overflow-y-auto");
+    expect(laneBody).not.toHaveClass("overscroll-y-contain");
   });
 });

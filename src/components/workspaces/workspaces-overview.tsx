@@ -5,12 +5,32 @@ import { Panel } from "@/components/dashboard/panel";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import type { WorkspacesPageVm } from "@/lib/view-models/workspaces";
 
+function onboardingTone(stageKey: string) {
+  switch (stageKey) {
+    case "archived":
+      return "border-emerald-400/20 bg-emerald-400/10 text-emerald-100";
+    case "run-ready":
+      return "border-cyan-300/20 bg-cyan-300/10 text-cyan-100";
+    case "visual-ready":
+      return "border-sky-300/20 bg-sky-300/10 text-sky-100";
+    case "base-ready":
+      return "border-amber-300/20 bg-amber-300/10 text-amber-100";
+    default:
+      return "border-white/10 bg-white/5 text-slate-200";
+  }
+}
+
 export function WorkspacesOverview({ viewModel }: { viewModel: WorkspacesPageVm }) {
   return (
     <div className="space-y-6">
-      <Panel title="健康分布" eyebrow="工作区概览">
-        <MetricStrip items={viewModel.healthBands} />
-      </Panel>
+      <div className="grid gap-5 xl:grid-cols-2">
+        <Panel title="健康分布" eyebrow="工作区概览">
+          <MetricStrip items={viewModel.healthBands} />
+        </Panel>
+        <Panel title="接入进度" eyebrow="Onboarding">
+          <MetricStrip items={viewModel.onboardingBands} />
+        </Panel>
+      </div>
       <div className="grid gap-5 xl:grid-cols-2">
         {viewModel.workspaces.map((workspace) => (
           <Panel
@@ -24,6 +44,16 @@ export function WorkspacesOverview({ viewModel }: { viewModel: WorkspacesPageVm 
                 <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-slate-400">
                   {workspace.zone}
                 </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className={`rounded-full border px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.24em] ${onboardingTone(workspace.onboardingStageKey)}`}
+                  >
+                    {workspace.onboardingStageLabel}
+                  </span>
+                  <span className="text-xs text-slate-500">
+                    资产完整度 {workspace.onboardingScore}%
+                  </span>
+                </div>
                 <h2 className="text-2xl font-semibold tracking-tight text-white">
                   {workspace.name}
                 </h2>
@@ -69,6 +99,7 @@ export function WorkspacesOverview({ viewModel }: { viewModel: WorkspacesPageVm 
                     动态概览
                   </p>
                   <div className="mt-3 space-y-2 text-sm text-slate-200">
+                    <p>阶段：{workspace.onboardingStageLabel}</p>
                     <p>{workspace.activeRuns} 个活跃运行</p>
                     <p>{workspace.openChanges} 个进行中变更</p>
                     <p>{workspace.lastActivity}</p>
@@ -87,10 +118,22 @@ export function WorkspacesOverview({ viewModel }: { viewModel: WorkspacesPageVm 
               </div>
               <div className="flex flex-wrap gap-3">
                 <Link
-                  href={`/workspaces/${workspace.id}`}
+                  href={`/workspaces/${workspace.slug}`}
                   className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-sm font-medium text-cyan-50 transition hover:border-cyan-200/40 hover:bg-cyan-300/14"
                 >
                   查看工作区
+                </Link>
+                <Link
+                  href={`/route-decision?workspace=${encodeURIComponent(workspace.slug)}`}
+                  className="rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-white/20 hover:bg-white/6"
+                >
+                  分流决策
+                </Link>
+                <Link
+                  href={`/w/${encodeURIComponent(workspace.slug)}/settings`}
+                  className="rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-white/20 hover:bg-white/6"
+                >
+                  接入设置
                 </Link>
                 <Link
                   href="/runs"

@@ -34,11 +34,25 @@ const PLATFORM_SECTIONS: NavigationSection[] = [
     label: "工作台",
     items: [
       {
+        href: "/overview",
+        icon: "layout-dashboard",
+        label: "驾驶舱",
+        requiredRole: "viewer",
+        summary: "查看接入状态、阻塞点与闭环结果",
+      },
+      {
         href: "/workspaces",
         icon: "folders",
         label: "工作区",
         requiredRole: "viewer",
         summary: "选择项目并查看跨工作区健康",
+      },
+      {
+        href: "/route-decision",
+        icon: "workflow",
+        label: "分流决策",
+        requiredRole: "viewer",
+        summary: "判断当前改动该走哪条链路",
       },
     ],
   },

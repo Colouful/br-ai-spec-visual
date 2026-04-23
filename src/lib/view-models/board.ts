@@ -80,7 +80,7 @@ function asString(value: unknown, fallback = "") {
   return typeof value === "string" ? value : fallback;
 }
 
-function classifyLane(input: {
+export function classifyLane(input: {
   status: string | null;
   lastEventType: string;
   pendingGate: string | null;
@@ -93,7 +93,13 @@ function classifyLane(input: {
   if (status === "completed" || status === "success" || event.includes("archived")) {
     return "archive";
   }
-  if (gate || event.includes("gate") || status === "awaiting_review") {
+  if (
+    gate ||
+    status === "awaiting_review" ||
+    status === "waiting-approval" ||
+    status === "paused" ||
+    event.includes("gate-blocked")
+  ) {
     return "guardian";
   }
   if (event.includes("proposal") || event.includes("spec.proposed") || status === "proposed") {

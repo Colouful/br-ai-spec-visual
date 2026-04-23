@@ -20,6 +20,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   admin: "平台",
   platform: "平台",
   installations: "用户安装使用",
+  "route-decision": "分流决策",
   w: "工作区",
 };
 

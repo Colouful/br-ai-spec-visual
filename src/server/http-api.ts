@@ -101,6 +101,7 @@ export async function listWorkspacesAction(request?: Request): Promise<Response>
   return jsonResponse({
     items: items.map((item) => ({
       id: item.id,
+      slug: item.slug,
       name: item.name,
       description: item.description,
       zone: item.zone,
@@ -114,6 +115,9 @@ export async function listWorkspacesAction(request?: Request): Promise<Response>
       lastActivityAt: item.lastActivityAt,
       focus: item.focus,
       tags: item.tags,
+      onboardingStageKey: item.onboardingStageKey,
+      onboardingStageLabel: item.onboardingStageLabel,
+      onboardingScore: item.onboardingScore,
     })),
   });
 }

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ChangesRealtimeSection } from "@/components/changes/changes-realtime-section";
@@ -44,7 +45,17 @@ export default async function WorkspaceChangesPage({ params }: PageProps) {
   };
 
   return (
-    <ConsolePage hero={viewModel.hero}>
+    <ConsolePage
+      hero={viewModel.hero}
+      actions={
+        <Link
+          href={`/route-decision?workspace=${encodeURIComponent(workspace.slug)}`}
+          className="rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-white/20 hover:bg-white/6"
+        >
+          变更分流决策
+        </Link>
+      }
+    >
       <ChangesRealtimeSection initialViewModel={viewModel} />
     </ConsolePage>
   );

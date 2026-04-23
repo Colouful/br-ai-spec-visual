@@ -11,6 +11,7 @@ describe("platform navigation", () => {
       .flatMap((section) => section.items)
       .map((item) => item.label);
 
+    expect(labels).toContain("驾驶舱");
     expect(labels).toContain("工作区");
     expect(labels).not.toContain("全局成员");
     expect(labels).not.toContain("系统设置");
@@ -22,6 +23,7 @@ describe("platform navigation", () => {
       .flatMap((section) => section.items)
       .map((item) => item.label);
 
+    expect(labels).toContain("驾驶舱");
     expect(labels).toContain("工作区");
     expect(labels).not.toContain("全局成员");
     expect(labels).not.toContain("系统设置");
@@ -32,6 +34,7 @@ describe("platform navigation", () => {
       .flatMap((section) => section.items)
       .map((item) => item.label);
 
+    expect(labels).toContain("驾驶舱");
     expect(labels).toContain("工作区");
     expect(labels).toContain("全局成员");
     expect(labels).toContain("系统设置");

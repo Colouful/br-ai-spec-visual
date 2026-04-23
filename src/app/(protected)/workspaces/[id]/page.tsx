@@ -30,7 +30,7 @@ export default async function WorkspaceDetailPage({
       actions={
         <div className="flex flex-wrap items-center gap-3">
           <Link
-            href={`/workspaces/${viewModel.workspace.id}/board`}
+            href={`/workspaces/${viewModel.workspace.slug}/board`}
             className="rounded-full border border-cyan-300/40 bg-cyan-300/10 px-4 py-2 text-xs font-mono uppercase tracking-[0.26em] text-cyan-200 transition hover:border-cyan-200/70 hover:bg-cyan-300/20"
           >
             打开 Kanban

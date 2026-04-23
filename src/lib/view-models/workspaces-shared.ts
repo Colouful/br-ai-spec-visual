@@ -5,6 +5,7 @@ import type { WorkspaceCardVm } from "@/lib/view-models/workspaces";
 
 export interface WorkspaceApiItem {
   id: string;
+  slug?: string;
   name: string;
   description: string;
   zone: string;
@@ -18,6 +19,9 @@ export interface WorkspaceApiItem {
   lastActivityAt: string;
   focus: string;
   tags: string[];
+  onboardingStageKey?: string;
+  onboardingStageLabel?: string;
+  onboardingScore?: number;
 }
 
 export function buildWorkspaceHealthBands(statuses: StatusKey[]): MetricVm[] {
@@ -32,6 +36,19 @@ export function buildWorkspaceHealthBands(statuses: StatusKey[]): MetricVm[] {
   }));
 }
 
+export function buildWorkspaceOnboardingBands(stageKeys: string[]): MetricVm[] {
+  return [
+    { key: "not-connected", label: "未接入" },
+    { key: "base-ready", label: "已接入" },
+    { key: "visual-ready", label: "已联通 Visual" },
+    { key: "run-ready", label: "已跑通需求" },
+    { key: "archived", label: "已归档" },
+  ].map((item) => ({
+    label: item.label,
+    value: String(stageKeys.filter((stage) => stage === item.key).length),
+  }));
+}
+
 export function buildWorkspaceCardFromApiItem(
   item: WorkspaceApiItem,
   now: Date,
@@ -39,6 +56,7 @@ export function buildWorkspaceCardFromApiItem(
 ): WorkspaceCardVm {
   return {
     id: item.id,
+    slug: item.slug ?? item.id,
     name: item.name,
     description: item.description,
     zone: item.zone,
@@ -52,6 +70,8 @@ export function buildWorkspaceCardFromApiItem(
     lastActivity: formatRelativeTime(item.lastActivityAt, { now, timeZone }),
     focus: item.focus,
     tags: item.tags,
+    onboardingStageKey: item.onboardingStageKey ?? "not-connected",
+    onboardingStageLabel: item.onboardingStageLabel ?? "未接入",
+    onboardingScore: item.onboardingScore ?? 0,
   };
 }
-

@@ -54,6 +54,19 @@ describe("toPipelineStage(run)", () => {
     );
   });
 
+  it("keeps gate-cleared running runs in the run stage", () => {
+    expectStage(
+      toPipelineStage({
+        kind: "run",
+        status: "running",
+        lastEventType: "gate-cleared",
+        pendingGate: null,
+        currentRole: "frontend-implementer",
+      }),
+      "run",
+    );
+  });
+
   it("maps awaiting_review status to review even without a pending gate", () => {
     expectStage(
       toPipelineStage({
