@@ -46,6 +46,10 @@
   --shell-selected-bg: rgba(255, 255, 255, 0.08);
   --shell-dropdown-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
   --shell-control-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  --status-running-border: rgba(240, 251, 203, 0.28);
+  --status-running-bg: rgba(240, 251, 203, 0.12);
+  --status-running-fg: #e7f3bf;
+  --status-running-dot: #d5e99d;
 
   --font-space-grotesk: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
     "Noto Sans SC", "Helvetica Neue", sans-serif;
@@ -96,6 +100,10 @@
   --shell-selected-bg: rgba(14, 165, 233, 0.08);
   --shell-dropdown-shadow: 0 24px 60px rgba(15, 23, 42, 0.14);
   --shell-control-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  --status-running-border: #dae7ab;
+  --status-running-bg: lab(96.8662 -11.7133 22.0854);
+  --status-running-fg: #79912d;
+  --status-running-dot: #98ba46;
   --theme-text-strong: #0f172a;
   --theme-text-body: #1e293b;
   --theme-text-muted: #64748b;
@@ -105,6 +113,12 @@
   --theme-card-bg-strong: rgba(255, 255, 255, 0.94);
   --theme-card-border: rgba(148, 163, 184, 0.26);
   --theme-card-border-strong: rgba(100, 116, 139, 0.38);
+  --theme-accent-cyan-text: #0f5f74;
+  --theme-accent-cyan-text-strong: #164e63;
+  --theme-accent-cyan-bg: rgba(8, 145, 178, 0.14);
+  --theme-accent-cyan-bg-strong: rgba(8, 145, 178, 0.22);
+  --theme-accent-cyan-border: rgba(8, 145, 178, 0.34);
+  --theme-accent-cyan-border-strong: rgba(8, 145, 178, 0.52);
 }
 
 @theme inline {
@@ -296,9 +310,96 @@ body {
   color: var(--theme-text-faint) !important;
 }
 
+:root[data-theme="light"] [class~="text-cyan-50"],
+:root[data-theme="light"] [class~="text-cyan-100"],
 :root[data-theme="light"] [class~="text-cyan-200"],
-:root[data-theme="light"] [class~="text-cyan-300"] {
-  color: #0369a1 !important;
+:root[data-theme="light"] [class~="text-cyan-300"],
+:root[data-theme="light"] [class~="text-cyan-400"],
+:root[data-theme="light"] [class~="text-cyan-200/80"],
+:root[data-theme="light"] [class~="text-cyan-300/80"],
+:root[data-theme="light"] [class~="text-cyan-300/85"],
+:root[data-theme="light"] [class~="text-cyan-300/90"] {
+  color: var(--theme-accent-cyan-text) !important;
+}
+
+:root[data-theme="light"] [class~="hover:text-cyan-100"]:hover,
+:root[data-theme="light"] [class~="hover:text-cyan-200"]:hover,
+:root[data-theme="light"] [class~="hover:text-cyan-300"]:hover {
+  color: var(--theme-accent-cyan-text-strong) !important;
+}
+
+:root[data-theme="light"] [class~="bg-cyan-300/5"],
+:root[data-theme="light"] [class~="bg-cyan-300/6"],
+:root[data-theme="light"] [class~="bg-cyan-300/8"],
+:root[data-theme="light"] [class~="bg-cyan-300/10"],
+:root[data-theme="light"] [class~="bg-cyan-300/14"],
+:root[data-theme="light"] [class~="bg-cyan-300/15"],
+:root[data-theme="light"] [class~="bg-cyan-300/18"],
+:root[data-theme="light"] [class~="bg-cyan-300/20"],
+:root[data-theme="light"] [class~="bg-cyan-300/40"],
+:root[data-theme="light"] [class~="bg-cyan-300/80"],
+:root[data-theme="light"] [class~="bg-cyan-400/6"],
+:root[data-theme="light"] [class~="bg-cyan-400/10"],
+:root[data-theme="light"] [class~="bg-cyan-400/15"],
+:root[data-theme="light"] [class~="bg-cyan-400/20"],
+:root[data-theme="light"] [class~="bg-cyan-400/70"],
+:root[data-theme="light"] [class~="bg-cyan-500/15"] {
+  background-color: var(--theme-accent-cyan-bg) !important;
+}
+
+:root[data-theme="light"] [class~="bg-cyan-300"],
+:root[data-theme="light"] [class~="bg-cyan-400"] {
+  background-color: var(--theme-accent-cyan-text) !important;
+}
+
+:root[data-theme="light"] [class~="hover:bg-cyan-300/5"]:hover,
+:root[data-theme="light"] [class~="hover:bg-cyan-300/14"]:hover,
+:root[data-theme="light"] [class~="hover:bg-cyan-300/18"]:hover,
+:root[data-theme="light"] [class~="hover:bg-cyan-300/20"]:hover,
+:root[data-theme="light"] [class~="hover:bg-cyan-400/20"]:hover {
+  background-color: var(--theme-accent-cyan-bg-strong) !important;
+}
+
+:root[data-theme="light"] [class~="border-cyan-300/16"],
+:root[data-theme="light"] [class~="border-cyan-300/20"],
+:root[data-theme="light"] [class~="border-cyan-300/22"],
+:root[data-theme="light"] [class~="border-cyan-300/25"],
+:root[data-theme="light"] [class~="border-cyan-300/28"],
+:root[data-theme="light"] [class~="border-cyan-300/30"],
+:root[data-theme="light"] [class~="border-cyan-300/40"],
+:root[data-theme="light"] [class~="border-cyan-300/60"],
+:root[data-theme="light"] [class~="border-cyan-400/10"],
+:root[data-theme="light"] [class~="border-cyan-400/12"],
+:root[data-theme="light"] [class~="border-cyan-400/20"],
+:root[data-theme="light"] [class~="border-cyan-400/25"],
+:root[data-theme="light"] [class~="border-cyan-400/30"],
+:root[data-theme="light"] [class~="border-cyan-400/40"],
+:root[data-theme="light"] [class~="border-cyan-400/60"] {
+  border-color: var(--theme-accent-cyan-border) !important;
+}
+
+:root[data-theme="light"] [class~="hover:border-cyan-200/40"]:hover,
+:root[data-theme="light"] [class~="hover:border-cyan-200/50"]:hover,
+:root[data-theme="light"] [class~="hover:border-cyan-200/60"]:hover,
+:root[data-theme="light"] [class~="hover:border-cyan-200/70"]:hover,
+:root[data-theme="light"] [class~="hover:border-cyan-300/20"]:hover,
+:root[data-theme="light"] [class~="hover:border-cyan-300/25"]:hover,
+:root[data-theme="light"] [class~="hover:border-cyan-300/30"]:hover,
+:root[data-theme="light"] [class~="hover:border-cyan-300/40"]:hover {
+  border-color: var(--theme-accent-cyan-border-strong) !important;
+}
+
+:root[data-theme="light"] [class~="ring-cyan-300/40"],
+:root[data-theme="light"] [class~="ring-cyan-300/60"],
+:root[data-theme="light"] [class~="ring-cyan-400/15"],
+:root[data-theme="light"] [class~="ring-cyan-400/25"],
+:root[data-theme="light"] [class~="ring-cyan-400/60"] {
+  --tw-ring-color: var(--theme-accent-cyan-border) !important;
+}
+
+:root[data-theme="light"] [class~="decoration-cyan-500/40"],
+:root[data-theme="light"] [class~="hover:decoration-cyan-300/60"]:hover {
+  text-decoration-color: var(--theme-accent-cyan-border-strong) !important;
 }
 
 :root[data-theme="light"] [class~="text-amber-200"],

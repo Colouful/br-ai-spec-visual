@@ -12,6 +12,11 @@ const TONE_CLASSES: Record<StatusTone, string> = {
   cyan: "border-cyan-400/20 bg-cyan-400/10 text-cyan-100",
 };
 
+const RUNNING_BADGE_CLASSES =
+  "[border-color:var(--status-running-border)] [background-color:var(--status-running-bg)] [color:var(--status-running-fg)] shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]";
+
+const RUNNING_DOT_CLASSES = "[background-color:var(--status-running-dot)]";
+
 export function getToneClasses(tone: StatusTone): string {
   return TONE_CLASSES[tone];
 }
@@ -23,21 +28,24 @@ export function StatusBadge({
   badge: StatusBadgeModel;
   compact?: boolean;
 }) {
+  const isRunningBadge = badge.tone === "lime" && badge.pulse;
+
   return (
     <span
       className={clsx(
         "inline-flex items-center gap-2 rounded-full border font-mono text-[11px] uppercase tracking-[0.24em]",
         compact ? "px-2.5 py-1" : "px-3 py-1.5",
-        getToneClasses(badge.tone),
+        isRunningBadge ? RUNNING_BADGE_CLASSES : getToneClasses(badge.tone),
       )}
     >
       <span
         className={clsx(
           "h-1.5 w-1.5 rounded-full",
           badge.pulse && "animate-pulse",
+          isRunningBadge && RUNNING_DOT_CLASSES,
           badge.tone === "slate" && "bg-white/40",
           badge.tone === "sky" && "bg-sky-300",
-          badge.tone === "lime" && "bg-lime-300",
+          badge.tone === "lime" && !isRunningBadge && "bg-lime-300",
           badge.tone === "amber" && "bg-amber-300",
           badge.tone === "rose" && "bg-rose-300",
           badge.tone === "cyan" && "bg-cyan-300",
