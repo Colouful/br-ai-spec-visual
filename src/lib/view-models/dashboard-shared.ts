@@ -14,6 +14,7 @@ export interface WorkspaceAssetSnapshot {
   hasOpenSpec: boolean;
   hasAiSpec: boolean;
   hasRegistry: boolean;
+  hasHubLock: boolean;
   hasLogs: boolean;
   hasVisualBridge: boolean;
 }
@@ -36,6 +37,7 @@ export const EMPTY_ASSET_SNAPSHOT: WorkspaceAssetSnapshot = {
   hasOpenSpec: false,
   hasAiSpec: false,
   hasRegistry: false,
+  hasHubLock: false,
   hasLogs: false,
   hasVisualBridge: false,
 };
@@ -49,6 +51,7 @@ export const ASSET_LABELS: Array<{
   { key: "hasOpenSpec", label: "OpenSpec" },
   { key: "hasAiSpec", label: ".ai-spec" },
   { key: "hasRegistry", label: "registry" },
+  { key: "hasHubLock", label: "Hub Lock" },
   { key: "hasLogs", label: "logs" },
   { key: "hasVisualBridge", label: "Visual Bridge" },
 ];

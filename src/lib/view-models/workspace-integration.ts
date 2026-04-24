@@ -42,6 +42,9 @@ export function detectWorkspaceAssets(rootPath: string | null): WorkspaceAssetSn
       hasOpenSpec: safeExists(path.join(targetRoot, "openspec")),
       hasAiSpec: safeExists(path.join(targetRoot, ".ai-spec")),
       hasRegistry: safeExists(path.join(targetRoot, ".agents", "registry")),
+      hasHubLock:
+        safeExists(path.join(targetRoot, "hub-lock.json")) ||
+        safeExists(path.join(targetRoot, ".agents", "registry", "hub-lock.json")),
       hasLogs:
         safeExists(path.join(targetRoot, ".ai-spec", "logs")) ||
         safeExists(path.join(targetRoot, ".ai-spec", "history")) ||

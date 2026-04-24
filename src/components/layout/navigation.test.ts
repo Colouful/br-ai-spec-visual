@@ -59,6 +59,7 @@ describe("workspace navigation", () => {
       .map((item) => item.label);
     expect(labels).toContain("工作台");
     expect(labels).toContain("规范");
+    expect(labels).toContain("资产");
     expect(labels).toContain("拓扑");
     expect(labels).not.toContain("运行");
     expect(labels).not.toContain("变更");
@@ -81,6 +82,7 @@ describe("workspace navigation", () => {
       .map((item) => item.label);
     expect(labels).toContain("工作台");
     expect(labels).toContain("流水线");
+    expect(labels).toContain("资产");
     expect(labels).toContain("设置");
     expect(labels).toContain("成员");
     expect(labels).toContain("治理");

@@ -7,6 +7,7 @@ export async function sendRawIngestPayload(input: {
   connectToken?: string; // 改为可选
   sourceKind: string;
   projectRoot?: string;
+  hubLock?: unknown;
   rawEvents: RawIngestEventDraft[];
 }) {
   const url = new URL("/api/internal/ingest/raw", input.serverUrl);
@@ -26,6 +27,7 @@ export async function sendRawIngestPayload(input: {
         connect_token: input.connectToken,
         source_kind: input.sourceKind,
         root_path: input.projectRoot ?? null,
+        hub_lock: input.hubLock ?? null,
         raw_events: input.rawEvents,
       }
     : {
@@ -33,6 +35,7 @@ export async function sendRawIngestPayload(input: {
         sourceKind: input.sourceKind,
         workspaceId: input.workspaceId,
         projectRoot: input.projectRoot ?? null,
+        hubLock: input.hubLock ?? null,
         rawEvents: input.rawEvents,
       };
 

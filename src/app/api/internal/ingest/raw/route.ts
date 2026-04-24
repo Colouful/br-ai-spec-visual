@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import crypto from "node:crypto";
 
 import { validateConnectToken } from "@/server/connect-token";
 import { publishIngestProjectionEvent } from "@/server/ws-server";
@@ -56,10 +57,26 @@ export async function POST(request: Request) {
     }
   }
 
-  const rawEventsInput =
+  const rawEventsInput: unknown[] =
     (Array.isArray(body.raw_events) && (body.raw_events as unknown[])) ||
     (Array.isArray(body.rawEvents) && (body.rawEvents as unknown[])) ||
     [];
+  const hubLock = body.hub_lock ?? body.hubLock;
+  if (hubLock && typeof hubLock === "object") {
+    const checksum = crypto.createHash("sha256").update(JSON.stringify(hubLock)).digest("hex");
+    rawEventsInput.push({
+      sourceKind: "hub-lock-json",
+      sourcePath: ".agents/registry/hub-lock.json",
+      eventType: "hub-lock.snapshot",
+      eventKey: `${workspaceId}:hub-lock:${checksum}`,
+      dedupeKey: `hub-lock:${workspaceId}:${checksum}`,
+      checksum,
+      occurredAt: new Date().toISOString(),
+      entityType: "hub-lock",
+      entityId: workspaceId,
+      payload: hubLock,
+    });
+  }
 
   const result = await ingestWorkspaceRawEvents({
     workspaceId,

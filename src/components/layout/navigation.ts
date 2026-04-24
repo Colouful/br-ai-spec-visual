@@ -129,6 +129,13 @@ const WORKSPACE_TEMPLATE: NavigationSection[] = [
           summary: "提案、设计与规范文档列表",
         },
         {
+          segment: "assets",
+          icon: "folders",
+          label: "资产",
+          requiredRole: "viewer",
+          summary: "当前 Manifest 与 Hub 安装资产画像",
+        },
+        {
           segment: "runs",
           icon: "activity",
           label: "运行",

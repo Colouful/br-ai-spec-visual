@@ -8,6 +8,7 @@ import { sendRawIngestPayload } from './http-transport';
 import { collectWorkspaceRawEvents } from './raw-events';
 import { collectWorkspaceBaseline } from './scan.ts';
 import { sendCollectorEvents } from './transport.ts';
+import { readHubLockProfile } from '../lib/hub-lock-profile';
 
 async function main(): Promise<void> {
   const program = new Command();
@@ -38,6 +39,7 @@ async function main(): Promise<void> {
   }>();
 
   const baseline = await collectWorkspaceBaseline(options.project);
+  const hubLockProfile = readHubLockProfile(options.project);
   const rawEvents = await collectWorkspaceRawEvents({
     projectRoot: options.project,
     workspaceId: options.workspaceId,
@@ -49,6 +51,7 @@ async function main(): Promise<void> {
     agent_id: options.agentId,
     run_id: runId,
     baseline,
+    hub_lock: hubLockProfile,
     raw_event_count: rawEvents.length,
   };
 
@@ -63,6 +66,7 @@ async function main(): Promise<void> {
         connectToken: options.connectToken || '', // connectToken 变为可选
         sourceKind: 'baseline-batch',
         projectRoot: baseline.project_root,
+        hubLock: hubLockProfile,
         rawEvents,
       });
     } catch (error) {
@@ -110,6 +114,7 @@ async function main(): Promise<void> {
         payload: {
           run_id: runId,
           ...baseline,
+          hub_lock: hubLockProfile,
         },
       });
 
@@ -140,6 +145,8 @@ async function main(): Promise<void> {
   console.log(`log_files=${baseline.logs.file_count}`);
   console.log(`ai_spec_files=${baseline.ai_spec.file_count}`);
   console.log(`openspec_files=${baseline.openspec.file_count}`);
+  console.log(`hub_manifest=${hubLockProfile.manifestId || '未检测'}`);
+  console.log(`hub_assets=${hubLockProfile.assetCount}`);
   console.log(`raw_events=${rawEvents.length}`);
   if (result.transport) {
     console.log(`reported_to=${(result.transport as { websocket_url: string }).websocket_url}`);

@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import crypto from "node:crypto";
 import path from "node:path";
 
 import { glob } from "glob";
@@ -6,6 +7,7 @@ import { glob } from "glob";
 import { parseOmxJsonlSource } from "@/lib/ingest/omx-jsonl-source";
 import { parseRegistrySource } from "@/lib/ingest/registry-source";
 import { parseRuntimeStateSource } from "@/lib/ingest/runtime-state-source";
+import { readHubLockProfile } from "@/lib/hub-lock-profile";
 
 export async function collectWorkspaceRawEvents(input: {
   projectRoot: string;
@@ -17,6 +19,9 @@ export async function collectWorkspaceRawEvents(input: {
     absolute: true,
     nodir: true,
   });
+  const parseableRegistryFiles = registryFiles.filter(
+    (filePath) => path.basename(filePath) !== "hub-lock.json",
+  );
 
   // 扫描 OMX 日志
   const omxFiles = await glob(".omx/logs/*.jsonl", {
@@ -49,7 +54,7 @@ export async function collectWorkspaceRawEvents(input: {
   const rawEvents = [];
 
   // 解析角色注册表
-  for (const filePath of registryFiles) {
+  for (const filePath of parseableRegistryFiles) {
     try {
       const content = await readFile(filePath, "utf8");
       rawEvents.push(
@@ -62,6 +67,26 @@ export async function collectWorkspaceRawEvents(input: {
     } catch (error) {
       console.warn(`[collector] failed to parse registry file: ${filePath}`, error);
     }
+  }
+
+  const hubLockProfile = readHubLockProfile(input.projectRoot);
+  if (hubLockProfile.detected) {
+    const payload = JSON.parse(JSON.stringify(hubLockProfile)) as Record<string, unknown>;
+    const checksum = crypto.createHash("sha256").update(JSON.stringify(payload)).digest("hex");
+    rawEvents.push({
+      sourceKind: "hub-lock-json" as const,
+      sourcePath: hubLockProfile.sourcePath
+        ? path.relative(input.projectRoot, hubLockProfile.sourcePath)
+        : ".agents/registry/hub-lock.json",
+      eventType: "hub-lock.snapshot" as const,
+      eventKey: `${input.workspaceId}:hub-lock:${hubLockProfile.manifestId || "unknown"}`,
+      dedupeKey: `hub-lock:${input.workspaceId}:${checksum}`,
+      checksum,
+      occurredAt: new Date().toISOString(),
+      entityType: "hub-lock" as const,
+      entityId: hubLockProfile.manifestId || input.workspaceId,
+      payload,
+    });
   }
 
   // 解析 OMX 日志
