@@ -1,6 +1,6 @@
 import type { Prisma } from "@prisma/client";
 
-import { ensureDemoWorkspace, ensureSeededUsers } from "@/lib/db/bootstrap";
+import { ensureDemoWorkspaceSeedData, ensureSeededUsers } from "@/lib/db/bootstrap";
 import { prisma } from "@/lib/db/prisma";
 import { buildWorkspaceOnboardingVm } from "@/lib/view-models/workspace-integration";
 
@@ -74,7 +74,7 @@ function summarizeRunPayload(payload: Prisma.JsonValue | null | undefined) {
 
 export async function ensureReadModelBootstrap() {
   await ensureSeededUsers();
-  await ensureDemoWorkspace();
+  await ensureDemoWorkspaceSeedData();
 }
 
 export async function listWorkspaceReadModels() {
@@ -302,7 +302,8 @@ export async function listChangeReadModels() {
   return items.map((item) => {
     const payload = asRecord(item.payload);
     return {
-      id: `${item.changeKey}__${item.docType}`,
+      id: item.id,
+      displayId: `${item.changeKey}__${item.docType}`,
       changeKey: item.changeKey,
       docType: item.docType,
       title: item.title || `${item.changeKey} / ${item.docType}`,

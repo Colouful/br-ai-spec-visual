@@ -258,6 +258,22 @@ npm run collector -- \
   --project "/Users/lizhenwei/workspace/test/test-ai-spec/prd-to-delivery-local-first-060/test_副本14" \
   --server "http://localhost:18780" \
   --json | tail -50
+
+## 4.1 三仓联调补充验证
+
+在验证真实需求开发链路时，建议同步确认三仓职责是否按预期工作：
+
+1. `skill-q-platform（Hub 平台）`
+   - 确认当前使用的角色 / 规则 / 场景在 Hub 侧已有稳定 `registryId / manifestId`
+   - 若有 profile（技术栈）差异，确认导出侧存在 `sourceByProfile / rule_ids_by_profile / skill_priority_by_profile`
+
+2. `br-ai-spec（执行端）`
+   - 确认 `sync` 后目标项目 `.agents/registry/*.json` 已更新
+   - 确认运行期读到的是当前 profile 的规则，而不是缺少 profile 规则的退化结果
+
+3. `br-ai-spec-visual（可视化端）`
+   - 确认工作台 / 治理页能看到 `registry_source（注册表来源）`
+   - 正常情况下应优先显示数据库中的同步结果；若显示 `local-fallback`，说明数据库还没有 ingest 到 registry 数据
 ```
 
 关键看 JSON 末尾：

@@ -129,11 +129,13 @@ export function Donut({
   const r = size / 2 - 10;
   const cx = size / 2;
   const cy = size / 2;
-  let acc = 0;
   const arcs = items.map((item, idx) => {
-    const startAngle = (acc / total) * Math.PI * 2 - Math.PI / 2;
-    acc += item.value;
-    const endAngle = (acc / total) * Math.PI * 2 - Math.PI / 2;
+    const startValue = items
+      .slice(0, idx)
+      .reduce((sum, current) => sum + current.value, 0);
+    const endValue = startValue + item.value;
+    const startAngle = (startValue / total) * Math.PI * 2 - Math.PI / 2;
+    const endAngle = (endValue / total) * Math.PI * 2 - Math.PI / 2;
     const x1 = cx + r * Math.cos(startAngle);
     const y1 = cy + r * Math.sin(startAngle);
     const x2 = cx + r * Math.cos(endAngle);

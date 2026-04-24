@@ -160,7 +160,11 @@ export async function getChangeDetailVm(
   };
   const current =
     realChanges.find(
-      (change) => change.id === changeId || change.id === normalizedId,
+      (change) =>
+        change.id === changeId ||
+        change.id === normalizedId ||
+        change.displayId === changeId ||
+        change.displayId === normalizedId,
     ) ??
     pickByChangeKey(changeId) ??
     pickByChangeKey(normalizedId);

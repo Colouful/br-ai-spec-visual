@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import { UserRole } from "@prisma/client";
 
+import { ensureDemoWorkspaceSeedData } from "../src/lib/db/bootstrap";
 import { prisma } from "../src/lib/db/prisma";
 
 async function upsertUser(input: {
@@ -46,6 +47,8 @@ async function main() {
     role: UserRole.viewer,
     password: "Console#2026",
   });
+
+  await ensureDemoWorkspaceSeedData();
 }
 
 main()

@@ -5,11 +5,11 @@ export const runtime = 'nodejs';
 
 export async function GET(
   _request: Request,
-  context: { params: Promise<{ id: string }> },
+  context: { params: Promise<{ workspaceId: string }> },
 ): Promise<Response> {
   try {
-    const { id } = await context.params;
-    return await getWorkspaceAction(id);
+    const { workspaceId } = await context.params;
+    return await getWorkspaceAction(workspaceId);
   } catch (error) {
     return errorResponse(error);
   }

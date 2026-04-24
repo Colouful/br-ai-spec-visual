@@ -48,9 +48,12 @@ export function SidebarNav({ sections }: { sections: NavigationSection[] }) {
           <div className="mt-3 space-y-1">
             {section.items.map((item) => {
               const Icon = ICONS[item.icon];
+              const isWorkspaceRootLink = /^\/w\/[^/]+$/u.test(item.href);
               const active =
                 pathname === item.href ||
-                (item.href !== "/" && pathname.startsWith(item.href + "/"));
+                (!isWorkspaceRootLink &&
+                  item.href !== "/" &&
+                  pathname.startsWith(item.href + "/"));
 
               return (
                 <Link

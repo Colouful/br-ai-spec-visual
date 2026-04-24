@@ -1,4 +1,26 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { z } from "zod";
+
+function loadEnvFile(file: string, override: boolean) {
+  try {
+    const content = readFileSync(join(process.cwd(), file), "utf8");
+    content.split("\n").forEach((line) => {
+      const match = line.match(/^([^=]+)=(.*)$/);
+      if (!match) return;
+      const key = match[1].trim();
+      const value = match[2].trim().replace(/^["']|["']$/g, "");
+      if (override || !process.env[key]) {
+        process.env[key] = value;
+      }
+    });
+  } catch {
+    // ignore missing env file
+  }
+}
+
+loadEnvFile(".env", false);
+loadEnvFile(".env.local", true);
 
 const serverEnvSchema = z.object({
   DATABASE_URL: z.string().min(1),

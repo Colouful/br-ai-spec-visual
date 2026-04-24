@@ -74,9 +74,12 @@ export function MobileDock({ platformItems, userRole }: MobileDockProps) {
       <div className="mx-auto flex max-w-md items-center justify-between gap-1 rounded-2xl border border-white/12 bg-[#0a0f1a]/85 p-1.5 shadow-[0_24px_60px_rgba(0,0,0,0.5)] backdrop-blur-xl">
         {items.map((item) => {
           const Icon = ICONS[item.icon];
+          const isWorkspaceRootLink = /^\/w\/[^/]+$/u.test(item.href);
           const active =
             pathname === item.href ||
-            (item.href !== "/" && pathname?.startsWith(item.href + "/"));
+            (!isWorkspaceRootLink &&
+              item.href !== "/" &&
+              pathname?.startsWith(item.href + "/"));
           return (
             <Link
               key={item.href}

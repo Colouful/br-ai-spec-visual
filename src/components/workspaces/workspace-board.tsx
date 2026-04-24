@@ -113,22 +113,24 @@ export function WorkspaceBoard({ workspaceId, board }: BoardProps) {
       }
     }
 
-    setOverlay((current) => {
-      let changed = false;
-      const next = { ...current };
-      const nextPending = { ...pendingCommandState };
-      for (const [cardId, targetLane] of Object.entries(current)) {
-        const actualLane = actualLaneByCard.get(cardId);
-        if (!actualLane || actualLane === targetLane) {
-          delete next[cardId];
-          delete nextPending[cardId];
-          changed = true;
+    queueMicrotask(() => {
+      setOverlay((current) => {
+        let changed = false;
+        const next = { ...current };
+        const nextPending = { ...pendingCommandState };
+        for (const [cardId, targetLane] of Object.entries(current)) {
+          const actualLane = actualLaneByCard.get(cardId);
+          if (!actualLane || actualLane === targetLane) {
+            delete next[cardId];
+            delete nextPending[cardId];
+            changed = true;
+          }
         }
-      }
-      if (changed) {
-        setPendingCommandState(nextPending);
-      }
-      return changed ? next : current;
+        if (changed) {
+          setPendingCommandState(nextPending);
+        }
+        return changed ? next : current;
+      });
     });
   }, [board.lanes, overlay, pendingCommandState]);
 

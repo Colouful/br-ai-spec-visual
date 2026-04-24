@@ -1,7 +1,10 @@
 import bcrypt from "bcryptjs";
-import { UserRole, type Workspace } from "@prisma/client";
+import { Prisma, UserRole, type Workspace } from "@prisma/client";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 
 import { prisma } from "./prisma";
+import { parseRegistryFile } from "@/lib/ingest/registry";
 
 export async function ensureSeededUsers() {
   const count = await prisma.user.count();
@@ -105,6 +108,15 @@ export async function ensureDemoWorkspace(): Promise<Workspace | null> {
   }
 }
 
+export async function ensureDemoWorkspaceSeedData() {
+  const workspace = await ensureDemoWorkspace();
+  if (!workspace) return null;
+
+  await seedRegistrySnapshot(workspace);
+  await seedWorkbenchScenario(workspace);
+  return workspace;
+}
+
 function isKnownConcurrencyError(err: unknown): boolean {
   if (!err || typeof err !== "object") return false;
   const message = String((err as { message?: unknown }).message ?? "");
@@ -113,4 +125,275 @@ function isKnownConcurrencyError(err: unknown): boolean {
     message.includes("Unique constraint failed") ||
     message.includes("ER_DUP_ENTRY")
   );
+}
+
+async function seedRegistrySnapshot(workspace: Workspace) {
+  const registryCount = await prisma.registryItem.count({
+    where: { workspaceId: workspace.id },
+  });
+  if (registryCount > 0 || !workspace.rootPath) {
+    return;
+  }
+
+  const files = [
+    ".agents/registry/flows.json",
+    ".agents/registry/roles.json",
+  ] as const;
+
+  for (const file of files) {
+    try {
+      const absolutePath = path.resolve(workspace.rootPath, file);
+      const content = await readFile(absolutePath, "utf8");
+      const parsed = parseRegistryFile({
+        filePath: file,
+        content,
+        workspaceId: workspace.id,
+      });
+
+      for (const item of parsed.items) {
+        await prisma.registryItem.upsert({
+          where: {
+            workspaceId_category_slug: {
+              workspaceId: workspace.id,
+              category: item.category,
+              slug: item.slug,
+            },
+          },
+          create: {
+            workspaceId: workspace.id,
+            category: item.category,
+            slug: item.slug,
+            name: item.name,
+            label: item.label ?? undefined,
+            status: item.status ?? undefined,
+            version: item.version ?? 1,
+            sourcePath: item.sourcePath ?? file,
+            payload: item.payload as Prisma.InputJsonValue,
+          },
+          update: {
+            name: item.name,
+            label: item.label ?? undefined,
+            status: item.status ?? undefined,
+            version: item.version ?? 1,
+            sourcePath: item.sourcePath ?? file,
+            payload: item.payload as Prisma.InputJsonValue,
+          },
+        });
+      }
+    } catch {
+      // 注册表导入仅用于 demo 场景；失败时回退到运行时文件系统读取。
+    }
+  }
+}
+
+async function seedWorkbenchScenario(workspace: Workspace) {
+  const runCount = await prisma.runState.count({
+    where: { workspaceId: workspace.id },
+  });
+  if (runCount > 0) {
+    return;
+  }
+
+  const now = new Date("2026-04-24T10:00:00.000Z");
+  const earlier = new Date("2026-04-24T09:00:00.000Z");
+  const handoffAt = new Date("2026-04-24T09:20:00.000Z");
+  const runKey = "run_demo_current_expert";
+  const changeKey = "workspace-current-expert";
+
+  await prisma.workspace.update({
+    where: { id: workspace.id },
+    data: {
+      updatedAt: now,
+    },
+  });
+
+  await prisma.runState.create({
+    data: {
+      workspaceId: workspace.id,
+      runKey,
+      status: "waiting-approval",
+      lastEventType: "gate.waiting",
+      lastOccurredAt: now,
+      turnCount: 3,
+      payload: {
+        current_role: "frontend-implementer",
+        pending_gate: "before-archive",
+        trigger: {
+          source: "demo-seed",
+          entry: "task-orchestrator",
+          raw_input: "把工作区默认首页改成当前专家工作台，并补门禁审批能力",
+        },
+        task: {
+          change_id: changeKey,
+          summary: "完成工作台首页、门禁审批与治理页改造",
+        },
+        flow: {
+          id: "prd-to-delivery",
+          name: "PRD 到交付",
+        },
+        events: [
+          {
+            at: earlier.toISOString(),
+            type: "run-created",
+          },
+          {
+            at: handoffAt.toISOString(),
+            type: "role-handoff",
+            from_role: "requirement-analyst",
+            to_role: "frontend-implementer",
+          },
+          {
+            at: now.toISOString(),
+            type: "gate.waiting",
+            gate: "before-archive",
+          },
+        ],
+        gate_context: {
+          gate_id: "before-archive",
+          blocked_by_role: "frontend-implementer",
+          resume_to_role: "code-guardian",
+          required_user_action: "请确认规范资产、任务清单与归档前检查项",
+          blocked_reason: "等待归档前人工审核",
+        },
+      },
+    },
+  });
+
+  await prisma.runEvent.createMany({
+    data: [
+      {
+        workspaceId: workspace.id,
+        runKey,
+        eventType: "run-created",
+        occurredAt: earlier,
+        payload: {
+          title: "创建当前专家工作台演示 run",
+        },
+      },
+      {
+        workspaceId: workspace.id,
+        runKey,
+        eventType: "role-handoff",
+        occurredAt: handoffAt,
+        payload: {
+          from_role: "requirement-analyst",
+          to_role: "frontend-implementer",
+        },
+      },
+      {
+        workspaceId: workspace.id,
+        runKey,
+        eventType: "gate.waiting",
+        occurredAt: now,
+        payload: {
+          gate: "before-archive",
+        },
+      },
+    ],
+  });
+
+  await prisma.changeDocument.createMany({
+    data: [
+      {
+        workspaceId: workspace.id,
+        changeKey,
+        docType: "proposal",
+        title: "当前专家工作台改造提案",
+        sourcePath: "openspec/changes/workspace-current-expert/proposal.md",
+        status: "review",
+      },
+      {
+        workspaceId: workspace.id,
+        changeKey,
+        docType: "tasks",
+        title: "当前专家工作台改造任务",
+        sourcePath: "openspec/changes/workspace-current-expert/tasks.md",
+        status: "review",
+      },
+      {
+        workspaceId: workspace.id,
+        changeKey: "archived-change-sample",
+        docType: "archive",
+        title: "历史归档样例",
+        sourcePath: "openspec/changes/archived-change-sample/archive.md",
+        status: "archived",
+        archivedAt: new Date("2026-04-23T18:00:00.000Z"),
+      },
+    ],
+  });
+
+  await prisma.specAsset.createMany({
+    data: [
+      {
+        workspaceId: workspace.id,
+        runId: runKey,
+        changeId: changeKey,
+        sourceKind: "openspec",
+        sourcePath: "openspec/changes/workspace-current-expert/proposal.md",
+        assetType: "proposal",
+        status: "active",
+        title: "proposal",
+      },
+      {
+        workspaceId: workspace.id,
+        runId: runKey,
+        changeId: changeKey,
+        sourceKind: "openspec",
+        sourcePath: "openspec/changes/workspace-current-expert/tasks.md",
+        assetType: "tasks",
+        status: "reviewing",
+        title: "tasks",
+      },
+      {
+        workspaceId: workspace.id,
+        runId: runKey,
+        sourceKind: "ai-spec-history",
+        sourcePath: ".ai-spec/history/run_demo_current_expert/implementation-notes.md",
+        assetType: "implementation-notes",
+        status: "history",
+        title: "implementation-notes",
+      },
+      {
+        workspaceId: workspace.id,
+        changeId: "archived-change-sample",
+        sourceKind: "openspec",
+        sourcePath: "openspec/changes/archived-change-sample/archive.md",
+        assetType: "archive",
+        status: "archived",
+        title: "archive",
+      },
+    ],
+    skipDuplicates: true,
+  });
+
+  await prisma.gateApproval.create({
+    data: {
+      workspaceId: workspace.id,
+      runId: runKey,
+      nodeId: "node:frontend-implementer",
+      roleCode: "frontend-implementer",
+      gateType: "before-archive",
+      status: "waiting-approval",
+      mode: "main-flow-blocking",
+      reason: "等待归档前人工审核",
+      requiredAssetsJson: [
+        "openspec/changes/workspace-current-expert/tasks.md",
+      ],
+    },
+  });
+
+  await prisma.timelineEvent.createMany({
+    data: [
+      {
+        workspaceId: workspace.id,
+        runId: runKey,
+        nodeId: "node:frontend-implementer",
+        type: "gate.waiting",
+        title: "门禁进入等待审批",
+        payload: {
+          gate: "before-archive",
+        },
+      },
+    ],
+  });
 }

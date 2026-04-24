@@ -45,23 +45,25 @@ describe("platform navigation", () => {
 describe("workspace navigation", () => {
   const SLUG = "demo-workspace";
 
-  it("includes the pipeline tab and links to the slug-scoped path", () => {
+  it("includes the workbench tab and links to the workspace root path", () => {
     const sections = getWorkspaceNavigationSections("viewer", SLUG);
     const items = sections.flatMap((section) => section.items);
-    const pipeline = items.find((it) => it.label === "流水线");
-    expect(pipeline).toBeDefined();
-    expect(pipeline?.href).toBe(`/w/${SLUG}/pipeline`);
+    const workbench = items.find((it) => it.label === "工作台");
+    expect(workbench).toBeDefined();
+    expect(workbench?.href).toBe(`/w/${SLUG}`);
   });
 
   it("hides maintainer-only artifact tabs from viewer", () => {
     const labels = getWorkspaceNavigationSections("viewer", SLUG)
       .flatMap((section) => section.items)
       .map((item) => item.label);
+    expect(labels).toContain("工作台");
     expect(labels).toContain("规范");
     expect(labels).toContain("拓扑");
     expect(labels).not.toContain("运行");
     expect(labels).not.toContain("变更");
     expect(labels).not.toContain("设置");
+    expect(labels).not.toContain("治理");
   });
 
   it("exposes maintainer artifact tabs but hides workspace settings", () => {
@@ -77,8 +79,10 @@ describe("workspace navigation", () => {
     const labels = getWorkspaceNavigationSections("admin", SLUG)
       .flatMap((section) => section.items)
       .map((item) => item.label);
+    expect(labels).toContain("工作台");
     expect(labels).toContain("流水线");
     expect(labels).toContain("设置");
     expect(labels).toContain("成员");
+    expect(labels).toContain("治理");
   });
 });

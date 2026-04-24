@@ -26,10 +26,10 @@ export default async function OverviewPage() {
           </Link>
           {viewModel.defaultWorkspaceSlug ? (
             <Link
-              href={`/w/${encodeURIComponent(viewModel.defaultWorkspaceSlug)}/pipeline`}
+              href={`/w/${encodeURIComponent(viewModel.defaultWorkspaceSlug)}`}
               className="rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-white/20 hover:bg-white/6"
             >
-              打开默认主线
+              打开默认工作台
             </Link>
           ) : null}
         </>

@@ -5,6 +5,7 @@ import type { ChangeCardVm, ChangesPageVm } from "@/lib/view-models/changes";
 
 export interface ChangeApiItem {
   id: string;
+  displayId?: string;
   changeKey: string;
   docType: string;
   title: string;

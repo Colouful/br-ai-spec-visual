@@ -5,6 +5,7 @@ import {
   redirectIfAuthenticated,
   sanitizeRedirectTarget,
 } from "@/lib/auth/server";
+import { resolveDefaultWorkspaceSlug } from "@/lib/workspace-context/server";
 
 interface LoginPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -16,7 +17,11 @@ function pickParam(value: string | string[] | undefined) {
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
-  const nextPath = sanitizeRedirectTarget(pickParam(params.next) || "/overview");
+  const defaultWorkspaceSlug = await resolveDefaultWorkspaceSlug();
+  const defaultNextPath = defaultWorkspaceSlug
+    ? `/w/${encodeURIComponent(defaultWorkspaceSlug)}`
+    : "/workspaces";
+  const nextPath = sanitizeRedirectTarget(pickParam(params.next) || defaultNextPath);
   const notice =
     pickParam(params.reason) === "forbidden"
       ? "当前账号没有访问目标模块的权限，请切换更高角色账号后重试。"

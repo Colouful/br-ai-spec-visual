@@ -25,11 +25,14 @@ export function RealtimeWorkspaceBridge(props: {
   const workspaceIdsKey = workspaceIds.join("\u0000");
 
   useEffect(() => {
+    const scopedWorkspaceIds = workspaceIdsKey ? workspaceIdsKey.split("\u0000") : [];
     let cancelled = false;
     socketsRef.current.forEach((socket) => socket.close());
     socketsRef.current = [];
-    setConnectedCount(0);
-    setErrorCount(0);
+    queueMicrotask(() => {
+      setConnectedCount(0);
+      setErrorCount(0);
+    });
 
     const scheduleRefresh = (payload: unknown) => {
       if (refreshTimer.current) {
@@ -101,14 +104,14 @@ export function RealtimeWorkspaceBridge(props: {
         socket.addEventListener("close", () => {
           setConnectedCount((count) => Math.max(0, count - 1));
         });
-      } catch (_error) {
+      } catch {
         if (!cancelled) {
           setErrorCount((count) => count + 1);
         }
       }
     }
 
-    workspaceIds.forEach((workspaceId) => {
+    scopedWorkspaceIds.forEach((workspaceId) => {
       void connectWorkspace(workspaceId);
     });
 

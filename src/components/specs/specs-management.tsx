@@ -7,7 +7,10 @@ export function SpecsManagement({ viewModel }: { viewModel: SpecsPageVm }) {
     <Panel title="文档列表" eyebrow="按规范管理">
       <div className="space-y-3">
         {viewModel.rows.map((row) => (
-          <div key={row.id} className="rounded-[22px] border border-white/8 bg-white/4 px-4 py-4">
+          <div
+            key={`${row.id}:${row.sourcePath}`}
+            className="rounded-[22px] border border-white/8 bg-white/4 px-4 py-4"
+          >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h3 className="text-base font-medium text-white">{row.title}</h3>

@@ -183,10 +183,10 @@ export function RunGatePanel({ workspaceId, runKey, gate }: Props) {
           <p className="basis-full text-xs leading-relaxed text-amber-200/80">
             当前 run 后端未处于 Visual 待审批态（pending_gate ={" "}
             <code className="font-mono text-amber-100">
-              {gate.pendingGate ? `"${gate.pendingGate}"` : "null"}
+              {gate.pendingGate ? `“${gate.pendingGate}”` : "null"}
             </code>
-            ）。如 IDE 对话框要求"用一句话确认"，请回 Cursor / Claude Code
-            对话框回复"同意按当前实现继续"；Visual 这里不会发出新的审批指令。
+            ）。如 IDE 对话框要求“用一句话确认”，请回 Cursor / Claude Code
+            对话框回复“同意按当前实现继续”；Visual 这里不会发出新的审批指令。
           </p>
         ) : null}
         {feedback ? (

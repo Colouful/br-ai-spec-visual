@@ -50,6 +50,24 @@
   --status-running-bg: rgba(240, 251, 203, 0.12);
   --status-running-fg: #e7f3bf;
   --status-running-dot: #d5e99d;
+  --status-approval-border: rgba(251, 191, 36, 0.34);
+  --status-approval-bg: rgba(251, 191, 36, 0.14);
+  --status-approval-fg: #fde68a;
+  --status-blocked-border: rgba(251, 113, 133, 0.34);
+  --status-blocked-bg: rgba(244, 63, 94, 0.14);
+  --status-blocked-fg: #fecdd3;
+  --status-done-border: rgba(52, 211, 153, 0.3);
+  --status-done-bg: rgba(16, 185, 129, 0.14);
+  --status-done-fg: #bbf7d0;
+  --theme-panel-gradient:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
+  --theme-panel-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 24px 70px rgba(2, 6, 23, 0.42);
+  --theme-panel-border: rgba(255, 255, 255, 0.1);
+  --theme-grid-line: rgba(148, 163, 184, 0.12);
+  --theme-glow-cyan: rgba(34, 211, 238, 0.16);
+  --theme-glow-amber: rgba(251, 191, 36, 0.12);
 
   --font-space-grotesk: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
     "Noto Sans SC", "Helvetica Neue", sans-serif;
@@ -104,6 +122,24 @@
   --status-running-bg: lab(96.8662 -11.7133 22.0854);
   --status-running-fg: #79912d;
   --status-running-dot: #98ba46;
+  --status-approval-border: rgba(245, 158, 11, 0.36);
+  --status-approval-bg: rgba(245, 158, 11, 0.14);
+  --status-approval-fg: #92400e;
+  --status-blocked-border: rgba(244, 63, 94, 0.34);
+  --status-blocked-bg: rgba(244, 63, 94, 0.12);
+  --status-blocked-fg: #9f1239;
+  --status-done-border: rgba(16, 185, 129, 0.34);
+  --status-done-bg: rgba(16, 185, 129, 0.12);
+  --status-done-fg: #166534;
+  --theme-panel-gradient:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.86));
+  --theme-panel-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.94),
+    0 20px 54px rgba(15, 23, 42, 0.08);
+  --theme-panel-border: rgba(148, 163, 184, 0.26);
+  --theme-grid-line: rgba(100, 116, 139, 0.12);
+  --theme-glow-cyan: rgba(14, 165, 233, 0.12);
+  --theme-glow-amber: rgba(245, 158, 11, 0.1);
   --theme-text-strong: #0f172a;
   --theme-text-body: #1e293b;
   --theme-text-muted: #64748b;
@@ -223,6 +259,32 @@ body {
   box-shadow: var(--glass-shadow-strong);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+}
+
+.theme-panel {
+  background: var(--theme-panel-gradient);
+  border: 1px solid var(--theme-panel-border);
+  box-shadow: var(--theme-panel-shadow);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.status-waiting-approval {
+  border-color: var(--status-approval-border);
+  background: var(--status-approval-bg);
+  color: var(--status-approval-fg);
+}
+
+.status-blocked {
+  border-color: var(--status-blocked-border);
+  background: var(--status-blocked-bg);
+  color: var(--status-blocked-fg);
+}
+
+.status-done {
+  border-color: var(--status-done-border);
+  background: var(--status-done-bg);
+  color: var(--status-done-fg);
 }
 
 .text-gradient-aurora {

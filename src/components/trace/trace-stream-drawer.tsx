@@ -62,9 +62,14 @@ export function TraceStreamDrawer({
 
   useEffect(() => {
     if (!open) return;
-    void fetchData();
+    const kickoff = window.setTimeout(() => {
+      void fetchData();
+    }, 0);
     const id = window.setInterval(fetchData, refreshIntervalMs);
-    return () => window.clearInterval(id);
+    return () => {
+      window.clearTimeout(kickoff);
+      window.clearInterval(id);
+    };
   }, [open, fetchData, refreshIntervalMs]);
 
   return (

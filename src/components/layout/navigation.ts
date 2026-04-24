@@ -100,6 +100,13 @@ const WORKSPACE_TEMPLATE: NavigationSection[] = [
     items: (
       [
         {
+          segment: "",
+          icon: "layout-dashboard",
+          label: "工作台",
+          requiredRole: "viewer",
+          summary: "当前专家、门禁审批与规范资产的主入口",
+        },
+        {
           segment: "pipeline",
           icon: "workflow",
           label: "流水线",
@@ -151,6 +158,13 @@ const WORKSPACE_TEMPLATE: NavigationSection[] = [
     items: (
       [
         {
+          segment: "admin",
+          icon: "bar-chart",
+          label: "治理",
+          requiredRole: "admin",
+          summary: "单项目 OpenSpec 治理详情与闭环指标",
+        },
+        {
           segment: "members",
           icon: "users",
           label: "成员",
@@ -171,7 +185,7 @@ const WORKSPACE_TEMPLATE: NavigationSection[] = [
 
 function buildPlaceholderItem(tpl: WorkspaceItemTemplate): NavigationItem {
   return {
-    href: `__WORKSPACE__/${tpl.segment}`,
+    href: tpl.segment ? `__WORKSPACE__/${tpl.segment}` : "__WORKSPACE__",
     icon: tpl.icon,
     label: tpl.label,
     requiredRole: tpl.requiredRole,

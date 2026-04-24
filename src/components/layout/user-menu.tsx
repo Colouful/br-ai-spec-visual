@@ -2,9 +2,9 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, LogOut, Shield } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-import { logoutAction } from "@/lib/auth/actions";
 import { getRoleLabel, type UserRole } from "@/lib/permissions";
 import { formatInitials } from "@/lib/utils";
 
@@ -13,7 +13,9 @@ export function UserMenu({
 }: {
   user: { name: string; email: string; role: UserRole };
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -23,6 +25,22 @@ export function UserMenu({
     window.addEventListener("mousedown", onClick);
     return () => window.removeEventListener("mousedown", onClick);
   }, []);
+
+  async function handleLogout() {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } finally {
+      setOpen(false);
+      router.replace("/login");
+      router.refresh();
+      setLoggingOut(false);
+    }
+  }
 
   return (
     <div ref={ref} className="relative">
@@ -74,15 +92,19 @@ export function UserMenu({
               </span>
             </div>
 
-            <form action={logoutAction} className="mt-2">
+            <div className="mt-2">
               <button
-                type="submit"
+                type="button"
+                onClick={() => {
+                  void handleLogout();
+                }}
+                disabled={loggingOut}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--shell-border)] bg-[var(--shell-control-bg)] px-3 py-2 text-xs font-medium text-[var(--shell-fg)] transition hover:border-rose-400/40 hover:bg-rose-400/10 hover:text-rose-500"
               >
                 <LogOut className="h-3.5 w-3.5" />
-                退出登录
+                {loggingOut ? "退出中…" : "退出登录"}
               </button>
-            </form>
+            </div>
           </motion.div>
         ) : null}
       </AnimatePresence>

@@ -54,12 +54,6 @@ export function FilePreviewButton({
   }, [changeId, filePath]);
 
   useEffect(() => {
-    if (open && state.status === "idle") {
-      void load();
-    }
-  }, [open, state.status, load]);
-
-  useEffect(() => {
     if (!open) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false);
@@ -77,7 +71,12 @@ export function FilePreviewButton({
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setOpen(true);
+          if (state.status === "idle") {
+            void load();
+          }
+        }}
         className="inline-flex items-center gap-1.5 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1.5 text-xs font-medium text-cyan-50 transition hover:border-cyan-200/50 hover:bg-cyan-300/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60"
       >
         <EyeIcon />

@@ -5,11 +5,11 @@ export const runtime = 'nodejs';
 
 export async function POST(
   request: Request,
-  context: { params: Promise<{ id: string }> },
+  context: { params: Promise<{ workspaceId: string }> },
 ): Promise<Response> {
   try {
-    const { id } = await context.params;
-    return await createConnectTokenAction(request, id);
+    const { workspaceId } = await context.params;
+    return await createConnectTokenAction(request, workspaceId);
   } catch (error) {
     return errorResponse(error);
   }

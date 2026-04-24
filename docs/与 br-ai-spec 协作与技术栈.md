@@ -4,6 +4,21 @@
 >
 > 兄弟仓默认路径：`../br-ai-spec`（即 `/Users/lizhenwei/workspace/vueworkspace/bairong/br-ai-spec`）。
 
+补充一个更完整的上游关系：
+
+- `skill-q-platform`：Hub 平台，维护 registry（注册表）主数据和导出
+- `br-ai-spec`：消费 Hub 导出，写入项目本地 `.agents/registry`
+- `br-ai-spec-visual`：优先展示数据库里的 `RegistryItem`；只有没有数据库结果时才回退读本地 `.agents/registry`
+
+因此 Visual 里的 registry 真相优先级是：
+
+```text
+数据库 RegistryItem（通常来自 Hub/CLI 同步） > 本地 .agents/registry fallback
+```
+
+三仓协同总说明见：
+[Hub-CLI-Visual三仓协同说明](../../br-ai-spec/docs/four/Hub-CLI-Visual三仓协同说明.md)
+
 ## 1. 两仓库角色定位
 
 - **`br-ai-spec`（npm: `@ex/ai-spec-auto`）**：规范与运行时**底座**。提供规则、技能、IDE 命令、OpenSpec 流程，并在协议推进时维护 `.ai-spec/` 运行态、`.agents/registry/` 角色注册表、`.omx/logs/` 日志、`openspec/` 规范资产；通过内置 `internal/visual-hooks/` 把关键事件**主动推送**给 visual。

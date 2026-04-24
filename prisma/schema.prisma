@@ -80,6 +80,9 @@ model Workspace {
   omxTurns        OmxTurn[]
   alerts          Alert[]
   rawEvents       RawIngestEvent[]
+  specAssets      SpecAsset[]
+  gateApprovals   GateApproval[]
+  timelineEvents  TimelineEvent[]
 }
 
 model WorkspaceMember {
@@ -209,6 +212,65 @@ model ChangeDocument {
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@unique([workspaceId, changeKey, docType, sourcePath])
+}
+
+model SpecAsset {
+  id          String    @id @default(cuid())
+  workspaceId String
+  runId       String?
+  changeId    String?
+  sourceKind  String
+  sourcePath  String
+  assetType   String
+  status      String
+  title       String?
+  roleCode    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, sourceKind, sourcePath])
+  @@index([workspaceId, runId, sourceKind])
+  @@index([workspaceId, changeId, sourceKind])
+}
+
+model GateApproval {
+  id                 String    @id @default(cuid())
+  workspaceId        String
+  runId              String
+  nodeId             String    @default("")
+  roleCode           String?
+  gateType           String
+  status             String
+  mode               String
+  reason             String?   @db.Text
+  requiredAssetsJson Json?
+  reviewer           String?
+  comment            String?   @db.Text
+  resolution         String?
+  approvedAt         DateTime?
+  rejectedAt         DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  workspace          Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, runId, nodeId, gateType])
+  @@index([workspaceId, runId, status])
+}
+
+model TimelineEvent {
+  id          String    @id @default(cuid())
+  workspaceId String
+  runId       String?
+  nodeId      String?
+  type        String
+  title       String
+  payload     Json?
+  createdAt   DateTime  @default(now())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, runId, createdAt])
+  @@index([workspaceId, type, createdAt])
 }
 
 model OmxSession {

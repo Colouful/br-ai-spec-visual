@@ -32,6 +32,7 @@ export function Tabs({
 
   return (
     <div
+      role="tablist"
       className={cn(
         "inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] p-1 backdrop-blur",
         className,
@@ -44,6 +45,8 @@ export function Tabs({
             key={it.id}
             type="button"
             onClick={() => handle(it.id)}
+            role="tab"
+            aria-selected={isActive}
             className={cn(
               "relative inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium transition",
               isActive ? "text-slate-900" : "text-slate-300 hover:text-white",

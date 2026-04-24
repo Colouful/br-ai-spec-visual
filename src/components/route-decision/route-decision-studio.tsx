@@ -128,17 +128,19 @@ export function RouteDecisionStudio({
   );
 
   useEffect(() => {
-    setInput((current) => ({
-      ...current,
-      workspaceName: selectedWorkspace?.name ?? "未选择工作区",
-      activeRunCount: selectedWorkspace?.activeRunCount ?? 0,
-      openChangeCount: selectedWorkspace?.openChangeCount ?? 0,
-      archivedChangeCount: selectedWorkspace?.archivedChangeCount ?? 0,
-      changeContext:
-        current.changeContext === "no-change"
-          ? inferInitialContext(selectedWorkspace)
-          : current.changeContext,
-    }));
+    queueMicrotask(() => {
+      setInput((current) => ({
+        ...current,
+        workspaceName: selectedWorkspace?.name ?? "未选择工作区",
+        activeRunCount: selectedWorkspace?.activeRunCount ?? 0,
+        openChangeCount: selectedWorkspace?.openChangeCount ?? 0,
+        archivedChangeCount: selectedWorkspace?.archivedChangeCount ?? 0,
+        changeContext:
+          current.changeContext === "no-change"
+            ? inferInitialContext(selectedWorkspace)
+            : current.changeContext,
+      }));
+    });
   }, [selectedWorkspace]);
 
   const deferredInput = useDeferredValue(input);
