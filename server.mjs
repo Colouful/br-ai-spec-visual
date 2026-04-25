@@ -12,6 +12,10 @@ import { tsImport } from 'tsx/esm/api';
 dotenv.config({ path: '.env.local', override: false, quiet: true });
 dotenv.config({ path: '.env', override: false, quiet: true });
 
+if (process.env.NODE_ENV === 'production' && process.env.VISUAL_AUTH_MODE === 'demo') {
+  throw new Error('生产环境禁止开启演示登录模式');
+}
+
 const dev = process.env.NODE_ENV !== 'production';
 /** 监听地址：优先 LISTEN_HOST，其次 HOST（常见于容器）、HOSTNAME，默认可从局域网访问 */
 const hostname =

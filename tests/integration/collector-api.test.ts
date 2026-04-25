@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { POST as historyPOST } from "@/app/api/collector/history/route";
 import { POST as incidentPOST } from "@/app/api/collector/incident/route";
 import { POST as projectStatePOST } from "@/app/api/collector/project-state/route";
@@ -210,5 +210,33 @@ describe("Collector API", () => {
     expectApiResponse(body, false);
     const error = body.error as Record<string, unknown>;
     expect(error.code).toBe("PRIVACY_POLICY_VIOLATED");
+  });
+
+  it("demo auth mode 不影响 Collector API 隐私校验", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("VISUAL_AUTH_MODE", "demo");
+
+    try {
+      const response = await projectStatePOST(
+        postJson("http://localhost/api/collector/project-state", {
+          eventId: "evt_demo_bad",
+          projectId: "proj_demo",
+          type: "single",
+          techProfile: {},
+          manifest: {},
+          sourceCode: "console.log('not allowed')",
+          privacy: privacy(),
+          reportedAt: "2026-04-25T10:00:00.000Z",
+        }),
+      );
+      const body = await readBody(response);
+
+      expect(response.status).toBe(400);
+      expectApiResponse(body, false);
+      const error = body.error as Record<string, unknown>;
+      expect(error.code).toBe("PRIVACY_POLICY_VIOLATED");
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 });

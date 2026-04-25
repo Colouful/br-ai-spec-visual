@@ -76,6 +76,26 @@ describe("AppShell", () => {
     expect(guideLink).toHaveAttribute("rel", "noopener noreferrer");
   });
 
+  it("renders a lightweight banner for demo auth users", async () => {
+    const view = await AppShell({
+      user: {
+        email: "demo-user@demo.local",
+        id: "demo-user",
+        isDemo: true,
+        name: "演示用户",
+        role: "admin",
+        teamId: "demo-team",
+      },
+      children: <div>内容</div>,
+    });
+
+    render(view);
+
+    expect(
+      screen.getByText("当前处于演示模式，仅用于本地验证和试点演示。"),
+    ).toBeInTheDocument();
+  });
+
   it("hides the desktop sidebar on the usage guide page", async () => {
     mockPathname = "/guide";
 

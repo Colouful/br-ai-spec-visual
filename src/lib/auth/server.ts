@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db/prisma";
 import { ensureSeededUsers } from "@/lib/db/bootstrap";
 import { canAccessRole, type UserRole } from "@/lib/permissions";
 
+import { createDemoUser, isDemoAuthEnabled } from "./demo-auth";
 import {
   decodeSessionToken,
   encodeSessionToken,
@@ -16,10 +17,12 @@ import {
 const SESSION_TTL_DAYS = 7;
 
 export interface AuthUser {
-  id: string;
   email: string;
+  id: string;
+  isDemo?: true;
   name: string;
   role: UserRole;
+  teamId?: string;
 }
 
 export function sanitizeRedirectTarget(value: string | null | undefined) {
@@ -118,6 +121,10 @@ export async function createUserSession(user: AuthUser) {
 }
 
 export async function getCurrentUser() {
+  if (isDemoAuthEnabled()) {
+    return createDemoUser() satisfies AuthUser;
+  }
+
   const cookieStore = await cookies();
   const rawToken = cookieStore.get(serverEnv.BR_AI_SPEC_VISUAL_COOKIE_NAME)?.value;
   if (!rawToken) {

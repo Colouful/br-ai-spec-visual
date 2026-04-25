@@ -28,8 +28,10 @@ interface AppShellProps {
   user: {
     email: string;
     id: string;
+    isDemo?: true;
     name: string;
     role: UserRole;
+    teamId?: string;
   };
 }
 
@@ -105,6 +107,11 @@ export async function AppShell({ children, user }: AppShellProps) {
         {/* Main */}
         <div className="flex min-h-screen min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-30 border-b border-[var(--shell-border)] bg-[var(--shell-header-bg)] backdrop-blur-xl">
+            {user.isDemo ? (
+              <div className="border-b border-amber-300/30 bg-amber-300/10 px-4 py-2 text-center text-xs font-medium text-amber-100 sm:px-6 lg:px-8">
+                当前处于演示模式，仅用于本地验证和试点演示。
+              </div>
+            ) : null}
             <div className="flex items-center gap-4 px-4 py-3 sm:px-6 lg:px-8">
               <div className="flex items-center gap-3 lg:hidden">
                 <BrandMark compact />
