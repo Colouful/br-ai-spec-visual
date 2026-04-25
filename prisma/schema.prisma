@@ -417,3 +417,105 @@ model InstallationProject {
   @@unique([installationId, projectHash])
   @@index([firstSeenAt])
 }
+
+model VisualProject {
+  id          String   @id @default(cuid())
+  projectId   String   @unique
+  workspaceId String?
+  projectHash String?
+  name        String?
+  type        String
+  techProfile Json
+  manifest    Json
+  packages    Json
+  lastRunId   String?
+  riskLevel   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([workspaceId])
+  @@index([lastRunId])
+}
+
+model VisualRun {
+  id                  String    @id @default(cuid())
+  runId               String    @unique
+  projectId           String
+  workspaceId          String?
+  requirementSummary  String?   @db.Text
+  state               String
+  stage               String
+  executor            String?
+  manifest            Json
+  branch              Json
+  worktree            Json
+  contextSummary      Json
+  verificationSummary Json
+  startedAt           DateTime?
+  completedAt         DateTime?
+  durationMs          Int?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([projectId])
+  @@index([workspaceId])
+  @@index([state])
+  @@index([stage])
+}
+
+model VisualRuntimeEvent {
+  id        String   @id @default(cuid())
+  eventId   String   @unique
+  runId     String
+  projectId String
+  type      String
+  stage     String?
+  state     String?
+  level     String
+  payload   Json
+  createdAt DateTime @default(now())
+
+  @@index([runId])
+  @@index([projectId])
+  @@index([type])
+  @@index([level])
+}
+
+model VisualHistoryItem {
+  id                  String   @id @default(cuid())
+  historyId           String   @unique
+  runId               String?
+  projectId           String
+  title               String
+  summary             String   @db.Text
+  changedFiles        Json
+  assetsUsed          Json
+  verificationSummary Json
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([runId])
+  @@index([projectId])
+}
+
+model VisualIncident {
+  id             String   @id @default(cuid())
+  incidentId     String   @unique
+  runId          String
+  projectId      String
+  type           String
+  level          String
+  stage          String?
+  message        String   @db.Text
+  suggestion     String?  @db.Text
+  diagnoseResult Json
+  recoveryAction Json
+  status         String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([runId])
+  @@index([projectId])
+  @@index([level])
+  @@index([status])
+}
