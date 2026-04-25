@@ -11,13 +11,15 @@ export async function sendRawIngestPayload(input: {
   rawEvents: RawIngestEventDraft[];
 }) {
   const url = new URL("/api/internal/ingest/raw", input.serverUrl);
-  
-  // 简化模式：支持通过 X-Workspace-ID header 认证
+
+  // HTTP header 只能稳定承载 Latin-1 范围字符；中文 workspaceId 放在 body 中传输。
   const headers: Record<string, string> = {
     "content-type": "application/json",
-    "X-Workspace-ID": input.workspaceId,
     "X-Agent-ID": input.agentId,
   };
+  if (/^[\x00-\x7F]*$/.test(input.workspaceId)) {
+    headers["X-Workspace-ID"] = input.workspaceId;
+  }
 
   // 如果提供了 connectToken，则使用完整的 body 格式
   const body = input.connectToken

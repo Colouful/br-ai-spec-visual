@@ -85,12 +85,8 @@ function sha256File(filePath: string) {
 function normalizeAsset(value: unknown, rootPath: string): HubLockAsset {
   const item = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
   const installPath = asString(item.installPath) || asString(item.path);
-  const currentChecksum =
-    typeof item.currentChecksum === "string"
-      ? item.currentChecksum
-      : installPath
-        ? sha256File(path.join(rootPath, installPath))
-        : null;
+  const fileChecksum = installPath ? sha256File(path.join(rootPath, installPath)) : null;
+  const currentChecksum = fileChecksum ?? (typeof item.currentChecksum === "string" ? item.currentChecksum : null);
   return {
     kind: asString(item.kind) || "unknown",
     assetId: asString(item.assetId) || asString(item.slug) || asString(item.id),

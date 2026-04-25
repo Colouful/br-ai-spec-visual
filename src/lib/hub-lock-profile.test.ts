@@ -69,6 +69,7 @@ describe("hub-lock-profile", () => {
           version: "1.0.0",
           path: ".agents/skills/execute-task/SKILL.md",
           checksum: "expected",
+          currentChecksum: "expected",
           riskLevel: "L0",
         },
       ],
