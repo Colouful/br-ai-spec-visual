@@ -2,7 +2,11 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { buildRuntimeReportFromHubLock, readHubLockProfile } from "@/lib/hub-lock-profile";
+import {
+  buildRuntimeInsightsFromHubLock,
+  buildRuntimeReportFromHubLock,
+  readHubLockProfile,
+} from "@/lib/hub-lock-profile";
 
 function workspace() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "visual-hub-lock-"));
@@ -96,5 +100,34 @@ describe("hub-lock-profile", () => {
     });
     expect(report.projectName).toBe("demo");
     expect(report.usedAssets).toEqual([]);
+  });
+
+  it("应基于 hub-lock 生成运行洞察和上报命令", () => {
+    const root = workspace();
+    writeJson(path.join(root, ".agents/registry/hub-lock.json"), {
+      manifest: { slug: "react-standard-delivery", version: "1.0.0", checksum: "manifest-a" },
+      install: { mode: "standard", installedAt: "2026-04-24T00:00:00.000Z" },
+      assets: [
+        {
+          kind: "skill",
+          slug: "execute-task",
+          version: "1.0.0",
+          path: ".agents/skills/execute-task/SKILL.md",
+          checksum: "expected",
+          riskLevel: "L0",
+        },
+      ],
+    });
+    fs.mkdirSync(path.join(root, ".agents/skills/execute-task"), { recursive: true });
+    fs.writeFileSync(path.join(root, ".agents/skills/execute-task/SKILL.md"), "# changed\n", "utf8");
+
+    const insights = buildRuntimeInsightsFromHubLock({
+      projectPath: root,
+      profile: readHubLockProfile(root),
+    });
+
+    expect(insights.health).toBe("warning");
+    expect(insights.runtimeReportCommand).toContain("hub runtime-report");
+    expect(insights.riskSignals.find((signal) => signal.label === "本地改动")?.value).toBe(1);
   });
 });

@@ -136,6 +136,13 @@ const WORKSPACE_TEMPLATE: NavigationSection[] = [
           summary: "当前 Manifest 与 Hub 安装资产画像",
         },
         {
+          segment: "runtime-insights",
+          icon: "activity",
+          label: "运行洞察",
+          requiredRole: "viewer",
+          summary: "Manifest 运行回流准备度与资产风险",
+        },
+        {
           segment: "runs",
           icon: "activity",
           label: "运行",
