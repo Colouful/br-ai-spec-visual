@@ -61,6 +61,22 @@ export type VisualRuntimeEventRecord = {
   createdAt: string;
 };
 
+export type VisualEvidenceReportRecord = {
+  id: string;
+  runId: string;
+  projectId: string;
+  taskId?: string | null;
+  specId?: string | null;
+  changedFiles: unknown[];
+  testResults: unknown[];
+  hookResults: unknown[];
+  repairResults: unknown[];
+  reviewResults: unknown[];
+  finalStatus: "success" | "failure" | "blocked" | "unknown";
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type VisualHistoryItemRecord = {
   id: string;
   historyId: string;

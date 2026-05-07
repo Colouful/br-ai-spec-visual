@@ -2,6 +2,7 @@ import { nanoid } from "nanoid";
 import type {
   VisualHistoryItemRecord,
   VisualIncidentRecord,
+  VisualEvidenceReportRecord,
   VisualProjectRecord,
   VisualRunRecord,
   VisualRuntimeEventRecord,
@@ -12,6 +13,7 @@ export type CollectorStore = {
   runEvents: Map<string, VisualRuntimeEventRecord>;
   projects: Map<string, VisualProjectRecord>;
   runs: Map<string, VisualRunRecord>;
+  evidenceReports: Map<string, VisualEvidenceReportRecord>;
   historyItems: Map<string, VisualHistoryItemRecord>;
   incidents: Map<string, VisualIncidentRecord>;
 };
@@ -26,6 +28,7 @@ export function createCollectorStore(): CollectorStore {
     runEvents: new Map(),
     projects: new Map(),
     runs: new Map(),
+    evidenceReports: new Map(),
     historyItems: new Map(),
     incidents: new Map(),
   };
@@ -42,6 +45,7 @@ export function resetDefaultCollectorStore() {
   defaultCollectorStore.runEvents.clear();
   defaultCollectorStore.projects.clear();
   defaultCollectorStore.runs.clear();
+  defaultCollectorStore.evidenceReports.clear();
   defaultCollectorStore.historyItems.clear();
   defaultCollectorStore.incidents.clear();
 }

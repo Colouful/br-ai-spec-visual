@@ -34,7 +34,12 @@ export class RunEventService {
 
     const timestamp = nowIsoString();
     const type = String(input.type ?? input.eventType ?? "");
-    const occurredAt = input.occurredAt ? String(input.occurredAt) : timestamp;
+    if (!type) throw badRequest("eventType 为必填字段。");
+    const occurredAt = input.occurredAt
+      ? String(input.occurredAt)
+      : input.timestamp
+        ? String(input.timestamp)
+        : timestamp;
     const event: VisualRuntimeEventRecord = {
       id: createRecordId("vevt"),
       eventId,
@@ -42,9 +47,9 @@ export class RunEventService {
       projectId,
       type,
       stage: input.stage ? String(input.stage) : null,
-      state: input.state ? String(input.state) : null,
-      level: String(input.level ?? "info"),
-      payload: asObject(input.payload),
+      state: input.state ? String(input.state) : input.status ? String(input.status) : null,
+      level: String(input.level ?? input.severity ?? "info"),
+      payload: buildPayload(input),
       createdAt: occurredAt,
     };
     this.store.runEvents.set(eventId, event);
@@ -62,6 +67,7 @@ export class RunEventService {
     const manifest = asObject(input.manifest);
     const payload = asObject(input.payload);
     const type = event.type;
+    const state = String(input.state ?? inferRunState(type, existing?.state));
     const run: VisualRunRecord = {
       id: existing?.id ?? createRecordId("vrun"),
       runId: event.runId,
@@ -70,7 +76,7 @@ export class RunEventService {
       requirementSummary: input.requirementSummary
         ? String(input.requirementSummary)
         : existing?.requirementSummary ?? null,
-      state: String(input.state ?? (type === "run_completed" ? "completed" : existing?.state ?? "running")),
+      state,
       stage: String(input.stage ?? existing?.stage ?? "initialized"),
       executor: input.executor ? String(input.executor) : existing?.executor ?? null,
       manifest: Object.keys(manifest).length > 0 ? manifest : existing?.manifest ?? {},
@@ -80,8 +86,8 @@ export class RunEventService {
       verificationSummary: type === "executor_completed"
         ? payload
         : existing?.verificationSummary ?? {},
-      startedAt: existing?.startedAt ?? (type === "spec_started" ? event.createdAt : null),
-      completedAt: type === "run_completed" ? event.createdAt : existing?.completedAt ?? null,
+      startedAt: existing?.startedAt ?? (isRunStarted(type) ? event.createdAt : null),
+      completedAt: isRunFinished(type) ? event.createdAt : existing?.completedAt ?? null,
       durationMs: typeof input.durationMs === "number" ? input.durationMs : existing?.durationMs ?? null,
       createdAt: existing?.createdAt ?? timestamp,
       updatedAt: timestamp,
@@ -97,8 +103,31 @@ export class RunEventService {
   }
 }
 
+function buildPayload(input: Record<string, unknown>): Record<string, unknown> {
+  const payload = asObject(input.payload);
+  if (Object.keys(payload).length > 0) return payload;
+  const metadata = asObject(input.metadata);
+  return {
+    ...(input.message ? { message: String(input.message) } : {}),
+    ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
+  };
+}
+
 function asObject(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {};
+}
+
+function isRunStarted(type: string) {
+  return type === "spec_started" || type === "run.started";
+}
+
+function isRunFinished(type: string) {
+  return type === "run_completed" || type === "run.finished";
+}
+
+function inferRunState(type: string, existingState: string | undefined) {
+  if (isRunFinished(type)) return "completed";
+  return existingState ?? "running";
 }

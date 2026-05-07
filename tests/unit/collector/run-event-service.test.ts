@@ -66,4 +66,35 @@ describe("RunEventService", () => {
     expect(second.idempotent).toBe(true);
     expect(store.runEvents.size).toBe(1);
   });
+
+  it("兼容 br-ai-spec RunEvent 冻结协议字段", () => {
+    const service = new RunEventService(createCollectorStore());
+    const result = service.collect({
+      eventId: "evt_contract_1",
+      runId: "run_contract_1",
+      projectId: "proj_contract",
+      eventType: "hook.finished",
+      stage: "post-test",
+      status: "success",
+      severity: "info",
+      message: "post-test 检查通过",
+      timestamp: "2026-05-07T00:00:00.000Z",
+      metadata: { hookId: "post-test", durationMs: 1200 },
+      privacy: {
+        sourceCodeIncluded: false,
+        rawPromptIncluded: false,
+        rawResponseIncluded: false,
+        absolutePathIncluded: false,
+      },
+    });
+
+    expect(result.event.type).toBe("hook.finished");
+    expect(result.event.state).toBe("success");
+    expect(result.event.level).toBe("info");
+    expect(result.event.createdAt).toBe("2026-05-07T00:00:00.000Z");
+    expect(result.event.payload).toMatchObject({
+      message: "post-test 检查通过",
+      metadata: { hookId: "post-test", durationMs: 1200 },
+    });
+  });
 });

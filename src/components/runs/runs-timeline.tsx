@@ -4,6 +4,7 @@ import { MetricStrip } from "@/components/dashboard/metric-strip";
 import { Panel } from "@/components/dashboard/panel";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { RunLiveClock } from "@/components/runs/run-live-clock";
+import { RuntimeOverviewPanel } from "@/components/runs/runtime-overview-panel";
 import type { RunsPageVm } from "@/lib/view-models/runs";
 import { isLiveRunCard } from "@/lib/view-models/runs-shared";
 
@@ -69,6 +70,9 @@ export function RunsTimeline({ viewModel }: { viewModel: RunsPageVm }) {
       <Panel title="时间线信号" eyebrow="执行脉冲">
         <MetricStrip items={viewModel.signals} />
       </Panel>
+      {viewModel.runtimeOverview ? (
+        <RuntimeOverviewPanel overview={viewModel.runtimeOverview} />
+      ) : null}
       <div className="grid gap-6 xl:grid-cols-[1.12fr_0.88fr]">
         <Panel title="实时队列" eyebrow="运行中 + 排队中">
           <div className="space-y-4">

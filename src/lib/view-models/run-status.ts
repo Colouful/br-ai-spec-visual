@@ -14,6 +14,8 @@ export function normalizeRunStatusKey(status: string | null | undefined): Status
     case "planned":
     case "observed":
       return "queued";
+    case "blocked":
+      return "blocked";
     default:
       return "running";
   }

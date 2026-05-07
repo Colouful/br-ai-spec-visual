@@ -2,8 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { POST as historyPOST } from "@/app/api/collector/history/route";
 import { POST as incidentPOST } from "@/app/api/collector/incident/route";
 import { POST as projectStatePOST } from "@/app/api/collector/project-state/route";
-import { POST as runEventPOST } from "@/app/api/collector/run-event/route";
+import { POST as evidenceReportPOST } from "@/app/api/collector/evidence-report/route";
+import { GET as runEventGET, POST as runEventPOST } from "@/app/api/collector/run-event/route";
 import { resetDefaultCollectorStore } from "@/server/collector";
+import { readFileSync } from "node:fs";
 
 function postJson(url: string, body: unknown) {
   return new Request(url, {
@@ -40,6 +42,15 @@ function privacy() {
     rawResponseIncluded: false,
     absolutePathIncluded: false,
   };
+}
+
+function readContractFixture(name: string) {
+  return JSON.parse(
+    readFileSync(
+      `/Users/lizhenwei/workspace/vueworkspace/bairong/br-ai-spec/contracts/fixtures/${name}`,
+      "utf8",
+    ),
+  ) as Record<string, unknown>;
 }
 
 describe("Collector API", () => {
@@ -143,6 +154,45 @@ describe("Collector API", () => {
 
     expectApiResponse(body, true);
     expect(data.run.completedAt).toBe("2026-04-25T10:03:00.000Z");
+  });
+
+  it("接收 br-ai-spec RunEvent 和 EvidenceReport fixture 并支持 runId 查询", async () => {
+    const runEvent = {
+      ...readContractFixture("run-event.fixture.json"),
+      privacy: privacy(),
+    };
+    const evidenceReport = {
+      ...readContractFixture("evidence-report.fixture.json"),
+      privacy: privacy(),
+    };
+
+    const eventResponse = await runEventPOST(
+      postJson("http://localhost/api/collector/run-event", runEvent),
+    );
+    const evidenceResponse = await evidenceReportPOST(
+      postJson("http://localhost/api/collector/evidence-report", evidenceReport),
+    );
+    const queryResponse = await runEventGET(
+      new Request(
+        "http://localhost/api/collector/run-event?runId=run_20260507_001&projectId=br-ai-spec-a83f91c2",
+      ),
+    );
+
+    const eventBody = await readBody(eventResponse);
+    const evidenceBody = await readBody(evidenceResponse);
+    const queryBody = await readBody(queryResponse);
+    const queryData = queryBody.data as {
+      runs: unknown[];
+      events: unknown[];
+      evidenceReports: unknown[];
+    };
+
+    expectApiResponse(eventBody, true);
+    expectApiResponse(evidenceBody, true);
+    expectApiResponse(queryBody, true);
+    expect(queryData.runs).toHaveLength(1);
+    expect(queryData.events).toHaveLength(1);
+    expect(queryData.evidenceReports).toHaveLength(1);
   });
 
   it("history 上报成功", async () => {

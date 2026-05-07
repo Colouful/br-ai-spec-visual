@@ -1,5 +1,6 @@
 export { collectorException, collectorSuccess } from "./api-response";
 export { CollectorError } from "./errors";
+export { EvidenceReportService } from "./evidence-report-service";
 export { HistoryService } from "./history-service";
 export { IncidentService } from "./incident-service";
 export { PrivacyGuard, defaultPrivacyGuard, isAbsolutePath } from "./privacy-guard";

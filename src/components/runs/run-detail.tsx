@@ -5,6 +5,10 @@ import { StatusBadge } from "@/components/dashboard/status-badge";
 import { RunEvidenceWall } from "@/components/runs/run-evidence-wall";
 import { RunGatePanel } from "@/components/runs/run-gate-panel";
 import { RunLiveClock } from "@/components/runs/run-live-clock";
+import {
+  RunAgentCollaborationPanel,
+  RunRuntimeResultsPanel,
+} from "@/components/runs/runtime-result-panels";
 import { RunTraceStream } from "@/components/runs/run-trace-stream";
 import type { RunDetailVm } from "@/lib/view-models/runs";
 
@@ -63,6 +67,8 @@ export function RunDetail({ viewModel }: { viewModel: RunDetailVm }) {
         </Panel>
 
         <RunEvidenceWall stages={viewModel.run.evidenceStages} />
+        <RunRuntimeResultsPanel results={viewModel.run.runtimeResults} />
+        <RunAgentCollaborationPanel collaboration={viewModel.run.agentCollaboration} />
 
         <Panel title="阶段时间线" eyebrow="历史事件">
           <div className="space-y-3">

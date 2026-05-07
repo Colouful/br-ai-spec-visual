@@ -1,6 +1,15 @@
 import { prisma } from "@/lib/db/prisma";
 import { getDemoConsoleData } from "@/lib/demo/console-data";
 import { getRunReadModel, listRunReadModels } from "@/lib/services/read-model";
+import { defaultCollectorStore } from "@/server/collector";
+import {
+  buildCollectorRunDetailVm,
+  buildCollectorRunsPageVm,
+  buildRuntimeQualityRiskVm,
+  type RunAgentCollaborationVm,
+  type RunRuntimeResultsVm,
+  type RuntimeQualityRiskVm,
+} from "@/lib/view-models/runtime-observability";
 import {
   formatDuration,
   formatRelativeTime,
@@ -82,6 +91,7 @@ export interface RunsPageVm {
   active: RunCardVm[];
   history: RunCardVm[];
   signals: MetricVm[];
+  runtimeOverview?: RuntimeQualityRiskVm;
 }
 
 export interface RunDetailVm {
@@ -98,6 +108,8 @@ export interface RunDetailVm {
     evidenceStages: RunEvidenceStage[];
     traceEvents: RunTraceEvent[];
     gate: RunGateInfo;
+    runtimeResults: RunRuntimeResultsVm;
+    agentCollaboration: RunAgentCollaborationVm;
   };
 }
 
@@ -310,6 +322,9 @@ async function buildDemoRunCard(runId: string, timeZone: string): Promise<RunCar
 }
 
 export async function getRunsPageVm(timeZone = "Asia/Shanghai"): Promise<RunsPageVm> {
+  const collectorVm = buildCollectorRunsPageVm(defaultCollectorStore, timeZone);
+  if (collectorVm) return collectorVm;
+
   const realRuns = await listRunReadModels();
   if (realRuns.length > 0) {
     const now = new Date();
@@ -326,13 +341,14 @@ export async function getRunsPageVm(timeZone = "Asia/Shanghai"): Promise<RunsPag
           "当前运行列表已直接读取数据库投影；`run-state(运行状态)` 和 `OMX(日志)` 入库后会优先显示真实记录。",
         stats: [
           { label: "活跃运行", value: String(buckets.active.length) },
-          { label: "历史运行", value: String(buckets.history.length) },
-          { label: "失败数", value: String(cards.filter((card) => card.status.label === "失败").length) },
-        ],
+        { label: "历史运行", value: String(buckets.history.length) },
+        { label: "失败数", value: String(cards.filter((card) => card.status.label === "失败").length) },
+      ],
       },
       active: buckets.active,
       history: buckets.history,
       signals: buckets.signals,
+      runtimeOverview: buildRuntimeQualityRiskVm(defaultCollectorStore),
     };
   }
 
@@ -372,6 +388,7 @@ export async function getRunsPageVm(timeZone = "Asia/Shanghai"): Promise<RunsPag
         note: "先用 demo 数据，真实 API 接入后可替换为聚合值",
       },
     ],
+    runtimeOverview: buildRuntimeQualityRiskVm(defaultCollectorStore),
   };
 }
 
@@ -379,6 +396,9 @@ export async function getRunDetailVm(
   runId: string,
   timeZone = "Asia/Shanghai",
 ): Promise<RunDetailVm | null> {
+  const collectorDetail = buildCollectorRunDetailVm(defaultCollectorStore, runId, timeZone);
+  if (collectorDetail) return collectorDetail;
+
   const realRun = await getRunReadModel(runId);
   if (realRun) {
     const summary = summarizePayload(realRun.payload);
@@ -446,6 +466,23 @@ export async function getRunDetailVm(
         evidenceStages,
         traceEvents,
         gate,
+        runtimeResults: {
+          changedFiles: [],
+          hookResults: [],
+          testResults: [],
+          repairResults: [],
+          reviewResults: [],
+          finalStatus: status === "completed" ? "success" : status === "failed" ? "failure" : "unknown",
+          blockerCount: 0,
+          maxRepairAttempts: 0,
+        },
+        agentCollaboration: {
+          summary: "当前运行未上报 Agent 协作摘要。",
+          items: [],
+          conflicts: [],
+          humanGates: gate.awaitingDecision ? [gate.pendingGate || "人工门禁"] : [],
+          finalDecision: getStatusBadge(status).label,
+        },
       },
     };
   }
@@ -497,6 +534,23 @@ export async function getRunDetailVm(
         currentRole: card.operator,
         awaitingDecision: false,
         outbox: [],
+      },
+      runtimeResults: {
+        changedFiles: [],
+        hookResults: [],
+        testResults: [],
+        repairResults: [],
+        reviewResults: [],
+        finalStatus: card.statusKey === "completed" ? "success" : card.statusKey === "failed" ? "failure" : "unknown",
+        blockerCount: 0,
+        maxRepairAttempts: 0,
+      },
+      agentCollaboration: {
+        summary: "Demo 数据未包含 Agent 协作摘要。",
+        items: [],
+        conflicts: [],
+        humanGates: [],
+        finalDecision: card.status.label,
       },
     },
   };
