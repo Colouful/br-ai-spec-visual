@@ -5,7 +5,9 @@
   "packageManager": "pnpm@10.22.0",
   "type": "module",
   "scripts": {
-    "dev": "node server.mjs",
+    "dev": "pnpm run dev:server",
+    "dev:server": "node server.mjs",
+    "dev:stack": "bash ./start-with-db.sh",
     "build": "next build",
     "start": "NODE_ENV=production node server.mjs",
     "lint": "eslint .",

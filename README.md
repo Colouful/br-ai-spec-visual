@@ -126,10 +126,13 @@ pnpm install
 
 ### 2. 环境变量
 
-至少配置数据库；其余开发环境可使用默认值。创建 `.env` 或 `.env.local`：
+至少配置数据库；其余开发环境可使用默认值。创建 `.env` 或 `.env.local`（模板见根目录 **`.env.example`**）：
 
 ```bash
-# 必填：MySQL 连接串（与 Prisma datasource 一致）
+# 监听端口（与团队约定一致时可用 18780，未设时见 server.mjs 默认）
+# PORT=18780
+
+# 必填：MySQL 连接串（与 Prisma datasource 一致；本仓 Docker 仅 DB 时宿主机端口常为 13306）
 DATABASE_URL="mysql://USER:PASSWORD@127.0.0.1:3306/br_ai_spec_visual"
 
 # 可选：会话与 Cookie（生产环境务必改为强随机密钥）
@@ -144,18 +147,23 @@ DATABASE_URL="mysql://USER:PASSWORD@127.0.0.1:3306/br_ai_spec_visual"
 ### 3. 初始化数据库与种子数据
 
 ```bash
-npm run prisma:generate
-npm run prisma:push
-npm run prisma:seed
+pnpm run prisma:generate
+pnpm run prisma:push
+pnpm run prisma:seed
 ```
 
 ### 4. 启动开发服务
 
+- **全量**（本机 Docker 起 MariaDB + Prisma 同步 + 服务）：`pnpm run dev:stack`（同 `./start-with-db.sh`）。适合首次或 schema/库未就绪时。
+- **仅服务**（数据库已可达且已 generate/push）：`pnpm dev`（实际为 `pnpm run dev:server` → `node server.mjs`）。
+
 ```bash
-npm run dev
+pnpm dev
 ```
 
-浏览器访问 [http://localhost:3000](http://localhost:3000)（默认端口 `3000`，可通过 `PORT`、`HOSTNAME` 调整）。根路径会重定向到 **`/workspaces`**。
+浏览器访问 `http://localhost:<PORT>`（**`PORT` 未设置时默认 `3000`**；若按 `.env.example` 使用 **18780** 则访问 [http://localhost:18780](http://localhost:18780)）。根路径会重定向到 **`/workspaces`**。
+
+更细的步骤说明见 **[README-START.md](README-START.md)**。
 
 ### 与 ai-spec-auto 项目联动（Collector）
 
@@ -173,16 +181,18 @@ npm run collector -- \
 
 | 命令 | 说明 |
 | --- | --- |
-| `npm run dev` / `pnpm dev` | 开发（`node server.mjs`，Next + WebSocket） |
-| `npm run build` | 生产构建 |
-| `npm run start` | 生产启动（`NODE_ENV=production node server.mjs`） |
-| `npm run lint` | ESLint |
-| `npm run typecheck` | TypeScript 检查 |
-| `npm run test` | Vitest |
-| `npm run prisma:generate` | 生成 Prisma Client |
-| `npm run prisma:push` | 开发环境同步 schema |
-| `npm run prisma:seed` | 种子数据 |
-| `npm run collector -- --help` | Collector CLI 帮助 |
+| `pnpm dev` | 仅开发服务（`pnpm run dev:server` → `node server.mjs`，Next + WebSocket；需库已就绪） |
+| `pnpm run dev:server` | 同上，显式子命令 |
+| `pnpm run dev:stack` | 全量：Docker MariaDB + Prisma + 服务（同 `./start-with-db.sh`） |
+| `pnpm run build` | 生产构建 |
+| `pnpm run start` | 生产启动（`NODE_ENV=production node server.mjs`） |
+| `pnpm run lint` | ESLint |
+| `pnpm run typecheck` | TypeScript 检查 |
+| `pnpm run test` | Vitest |
+| `pnpm run prisma:generate` | 生成 Prisma Client |
+| `pnpm run prisma:push` | 开发环境同步 schema |
+| `pnpm run prisma:seed` | 种子数据 |
+| `pnpm run collector -- --help` | Collector CLI 帮助 |
 
 ## 相关文档
 

@@ -60,9 +60,9 @@ source .env
 set +a
 
 echo "   - 生成 Prisma Client..."
-npm run prisma:generate
+pnpm run prisma:generate
 echo "   - 推送数据库 Schema..."
-npm run prisma:push
+pnpm run prisma:push
 echo "✅ 数据库初始化完成"
 echo ""
 
@@ -77,4 +77,4 @@ echo "  ⏹  停止: Ctrl+C (数据库会继续运行)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-npm run dev
+exec pnpm run dev:server

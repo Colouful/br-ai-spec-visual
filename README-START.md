@@ -10,35 +10,52 @@
 
 ## 🚀 启动服务
 
-### 方式 1：使用启动脚本（推荐）
+项目使用 **MySQL 协议**（可对接 **MariaDB** / MySQL），`DATABASE_URL` 见仓库根目录 **`.env.example`**。
+
+### 全量启动（推荐首次或需自动起 Docker DB）
+
+一键：拉起 **Docker MariaDB**（`13306`）、等待就绪、**Prisma generate/push**、再启动 `node server.mjs`（与 `pnpm dev` 最终进程相同）。
 
 ```bash
-cd /Users/lizhenwei/workspace/vueworkspace/bairong/br-ai-spec-visual
-./start.sh
+cd /path/to/br-ai-spec-visual
+pnpm run dev:stack
+# 等同于: ./start-with-db.sh
 ```
 
-### 方式 2：手动执行
+需已安装 **Docker** / **docker-compose**，并配置好根目录 **`.env`**（可从 `.env.example` 复制）。
+
+### 仅启动应用（`pnpm dev`）
+
+在 **数据库已运行** 且已执行过 **`pnpm prisma:generate` / `pnpm prisma:push`**（或 schema 未变仅 generate）时使用：
 
 ```bash
-cd /Users/lizhenwei/workspace/vueworkspace/bairong/br-ai-spec-visual
-
-# 停止旧进程
-pkill -f "node server.mjs" || true
-lsof -ti:18780 | xargs kill -9 || true
-
-# 清理缓存
-rm -rf .next node_modules/.cache
-
-# 加载环境变量
-export $(cat .env | xargs)
-
-# 初始化数据库
-npm run prisma:generate
-npm run prisma:push
-
-# 启动服务
-npm run dev
+pnpm dev
+# 与 pnpm run dev:server 等价，实际为 node server.mjs
 ```
+
+**前置条件**：`DATABASE_URL` 可达、`.env` 中 `PORT=18780`（或与你的约定一致）。
+
+### 方式：手动分步（与脚本逻辑等价，无自动 Docker）
+
+```bash
+cd /path/to/br-ai-spec-visual
+
+docker compose -f docker-compose-db-only.yml up -d
+# 等待库就绪后：
+
+pnpm run prisma:generate
+pnpm run prisma:push
+pnpm dev
+```
+
+---
+
+## 命令对照
+
+| 场景 | 命令 |
+| --- | --- |
+| 全量（DB + Prisma + 服务） | `pnpm dev:stack` 或 `./start-with-db.sh` |
+| 仅起 Node（Next + WebSocket） | `pnpm dev` / `pnpm run dev:server` |
 
 ---
 
@@ -70,18 +87,16 @@ http://localhost:18780
 
 ## ⚙️  当前配置
 
-- **端口**：18780
-- **数据库**：SQLite (file:./dev.db)
+- **端口**：18780（可在 `.env` 中改 `PORT`；未设置时默认见 `server.mjs`）
+- **数据库**：MariaDB（`docker-compose-db-only.yml` 映射宿主机 **13306**）或自管 MySQL/MariaDB
 - **环境**：development
 
-配置文件：`.env`
+配置文件：`.env`（模板：`.env.example`）
 
 ```env
-DATABASE_URL="file:./dev.db"
-NEXTAUTH_SECRET="..."
-NEXTAUTH_URL="http://localhost:18780"
-NODE_ENV=development
+DATABASE_URL="mysql://USER:PASSWORD@127.0.0.1:13306/br_ai_spec_visual"
 PORT=18780
+# 其余会话等变量见 .env.example 与 README.md
 ```
 
 ---
@@ -107,7 +122,7 @@ lsof -ti:18780 | xargs kill -9
 rm -f dev.db dev.db-journal
 
 # 重新初始化
-npm run prisma:push
+pnpm run prisma:push
 ```
 
 ---
